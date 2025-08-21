@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { BarChart3, TrendingDown, TrendingUp, Target, Database, RefreshCw, Zap } from 'lucide-react'
+import { BarChart3, TrendingDown, TrendingUp, Target, Database, RefreshCw } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import type { SavedLoad, FactoryAmmo, Component } from '../types/index'
 
@@ -141,7 +141,6 @@ export default function CostComparison() {
     selectedItem, 
     onItemChange, 
     options, 
-    components, 
     placeholder,
     excludeItem 
   }: {
@@ -149,7 +148,6 @@ export default function CostComparison() {
     selectedItem: ComparisonItem | null
     onItemChange: (item: ComparisonItem | null) => void
     options: ComparisonItem[]
-    components: Component[]
     placeholder: string
     excludeItem?: ComparisonItem | null
   }) => {
@@ -204,7 +202,7 @@ export default function CostComparison() {
                 </div>
               )}
               {type === 'factory' && isFactoryAmmo(selectedItem) && (
-                <div className={`text-xs mt-2 ${type === 'load' ? 'text-blue-600' : 'text-green-600'}`}>
+                <div className="text-xs mt-2 text-green-600">
                   <div>Bullet Weight: {selectedItem.bullet_weight} grains</div>
                   <div>Box: ${selectedItem.cost_per_box.toFixed(2)} / {selectedItem.rounds_per_box} rounds</div>
                 </div>
@@ -284,7 +282,6 @@ export default function CostComparison() {
             selectedItem={firstItem}
             onItemChange={setFirstItem}
             options={getFilteredOptions(firstType, firstItem ? getItemCaliber(firstItem) : undefined)}
-            components={components}
             placeholder={`Choose ${firstType === 'load' ? 'saved load' : 'factory ammo'}...`}
           />
         </div>
@@ -345,7 +342,6 @@ export default function CostComparison() {
                 selectedItem={secondItem}
                 onItemChange={setSecondItem}
                 options={getFilteredOptions(secondType, getItemCaliber(firstItem))}
-                components={components}
                 placeholder={`Choose ${secondType === 'load' ? 'saved load' : 'factory ammo'}...`}
                 excludeItem={firstItem}
               />

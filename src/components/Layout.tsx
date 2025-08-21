@@ -66,14 +66,14 @@ export default function Layout({ children }: LayoutProps) {
               <X className="h-6 w-6 text-white" />
             </button>
           </div>
-          <SidebarContent currentSection={getCurrentSection()} getNavigationForSection={getNavigationForSection} isActiveLink={isActiveLink} />
+          <SidebarContent getNavigationForSection={getNavigationForSection} isActiveLink={isActiveLink} />
         </div>
       </div>
 
       {/* Desktop sidebar */}
       <div className="hidden md:flex md:flex-shrink-0">
         <div className="flex flex-col w-64">
-          <SidebarContent currentSection={getCurrentSection()} getNavigationForSection={getNavigationForSection} isActiveLink={isActiveLink} />
+          <SidebarContent getNavigationForSection={getNavigationForSection} isActiveLink={isActiveLink} />
         </div>
       </div>
 
@@ -108,12 +108,11 @@ export default function Layout({ children }: LayoutProps) {
 }
 
 interface SidebarContentProps {
-  currentSection: string
   getNavigationForSection: (section: string) => NavItem[]
   isActiveLink: (href: string) => boolean
 }
 
-function SidebarContent({ currentSection, getNavigationForSection, isActiveLink }: SidebarContentProps) {
+function SidebarContent({ getNavigationForSection, isActiveLink }: SidebarContentProps) {
   return (
     <div className="flex-1 flex flex-col min-h-0 border-r border-gray-200 bg-white">
       {/* Logo */}

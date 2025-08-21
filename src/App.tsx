@@ -1,13 +1,10 @@
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom'
-import { Calculator, Package, Database, BarChart3, Target, FlaskConical, Menu, X } from 'lucide-react'
-import { useState } from 'react'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import BulletBuilder from './components/BulletBuilder'
 import ComponentManager from './components/ComponentManager'
 import SavedLoads from './components/SavedLoads'
 import CostComparison from './components/CostComparison'
 import FactoryAmmoManager from './components/FactoryAmmoManager'
 import LoadDevelopment from './components/LoadDevelopment'
-
 import Layout from './components/Layout'
 
 function App() {

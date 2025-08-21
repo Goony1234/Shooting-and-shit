@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Save, Calculator } from 'lucide-react'
+import { Save, Calculator, Copy } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import type { Component, LoadCalculation, Caliber } from '../types/index'
 
@@ -36,10 +36,12 @@ export default function BulletBuilder() {
   })
   const [calculation, setCalculation] = useState<LoadCalculation | null>(null)
   const [loading, setLoading] = useState(false)
+  const [isDuplicating, setIsDuplicating] = useState(false)
 
   useEffect(() => {
     fetchComponents()
     fetchCalibers()
+    loadDuplicateData()
   }, [])
 
   useEffect(() => {
@@ -73,6 +75,37 @@ export default function BulletBuilder() {
       setCalibers(data || [])
     } catch (error) {
       console.error('Error fetching calibers:', error)
+    }
+  }
+
+  const loadDuplicateData = () => {
+    try {
+      const duplicateDataStr = sessionStorage.getItem('duplicateLoadData')
+      if (duplicateDataStr) {
+        const duplicateData = JSON.parse(duplicateDataStr)
+        setFormData({
+          name: duplicateData.name,
+          caliber: duplicateData.caliber,
+          caliber_id: duplicateData.caliber_id || '',
+          brass_id: duplicateData.brass_id || '',
+          powder_id: duplicateData.powder_id,
+          powder_weight: duplicateData.powder_weight,
+          primer_id: duplicateData.primer_id,
+          bullet_id: duplicateData.bullet_id,
+          notes: duplicateData.notes || '',
+          brass_reuse_option: duplicateData.brass_reuse_option || 'new',
+          brass_reuse_count: duplicateData.brass_reuse_count || 5
+        })
+        
+        setIsDuplicating(true)
+        
+        // Clear the session storage after loading
+        sessionStorage.removeItem('duplicateLoadData')
+      }
+    } catch (error) {
+      console.error('Error loading duplicate data:', error)
+      // Clear corrupted data
+      sessionStorage.removeItem('duplicateLoadData')
     }
   }
 
@@ -171,6 +204,7 @@ export default function BulletBuilder() {
         brass_reuse_option: 'new',
         brass_reuse_count: 5
       })
+      setIsDuplicating(false)
     } catch (error) {
       console.error('Error saving load:', error)
       alert('Error saving load. Please try again.')
@@ -225,6 +259,30 @@ export default function BulletBuilder() {
             <Calculator className="h-6 w-6 text-blue-600 mr-2" />
             <h2 className="text-2xl font-bold text-gray-900">Build Your Load</h2>
           </div>
+
+          {isDuplicating && (
+            <div className="mb-6 bg-green-50 border border-green-200 rounded-md p-4">
+              <div className="flex items-center">
+                <Copy className="h-5 w-5 text-green-600 mr-2" />
+                <div>
+                  <h3 className="text-sm font-medium text-green-800">Load Duplicated</h3>
+                  <p className="text-sm text-green-700">
+                    This load has been pre-filled from an existing saved load. Modify any values as needed and save as a new load.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsDuplicating(false)}
+                  className="ml-auto text-green-600 hover:text-green-800"
+                >
+                  <span className="sr-only">Close</span>
+                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSaveLoad} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -332,7 +390,7 @@ export default function BulletBuilder() {
                           value={formData.brass_id}
                           onChange={(e) => setFormData({ ...formData, brass_id: e.target.value })}
                           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                          required={formData.brass_reuse_option !== 'reuse'}
+                          required={formData.brass_reuse_option === 'new' || formData.brass_reuse_option === 'amortize'}
                         >
                           <option value="">Select brass...</option>
                           {getComponentsByType('brass').map(component => (

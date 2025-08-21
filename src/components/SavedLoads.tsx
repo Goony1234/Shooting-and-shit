@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Database, Edit2, Trash2, Eye } from 'lucide-react'
+import { Database, Trash2, Eye, Copy } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import type { SavedLoad, Component } from '../types/index'
 
@@ -8,6 +9,7 @@ export default function SavedLoads() {
   const [components, setComponents] = useState<Component[]>([])
   const [selectedLoad, setSelectedLoad] = useState<SavedLoad | null>(null)
   const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
 
   useEffect(() => {
     Promise.all([fetchSavedLoads(), fetchComponents()])
@@ -61,7 +63,31 @@ export default function SavedLoads() {
     }
   }
 
-  const getComponentName = (id: string) => {
+  const handleDuplicate = (load: SavedLoad) => {
+    // Create a template object for the new load
+    const duplicateData = {
+      name: `${load.name} (Copy)`,
+      caliber: load.caliber,
+      caliber_id: load.caliber_id,
+      brass_id: load.brass_id,
+      powder_id: load.powder_id,
+      powder_weight: load.powder_weight,
+      primer_id: load.primer_id,
+      bullet_id: load.bullet_id,
+      notes: load.notes,
+      brass_reuse_option: load.brass_reuse_option || 'new',
+      brass_reuse_count: load.brass_reuse_count || 5
+    }
+
+    // Store in sessionStorage to pass to BulletBuilder
+    sessionStorage.setItem('duplicateLoadData', JSON.stringify(duplicateData))
+    
+    // Navigate to load builder
+    navigate('/')
+  }
+
+  const getComponentName = (id: string | undefined) => {
+    if (!id) return 'Unknown'
     const component = components.find(c => c.id === id)
     return component ? `${component.manufacturer || ''} ${component.name}`.trim() : 'Unknown'
   }
@@ -253,6 +279,13 @@ export default function SavedLoads() {
                         title="View details"
                       >
                         <Eye className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDuplicate(load)}
+                        className="text-green-600 hover:text-green-900 mr-3"
+                        title="Duplicate load"
+                      >
+                        <Copy className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(load)}
