@@ -10,6 +10,7 @@ interface ComponentFormData {
   cost_per_unit: number
   unit: string
   manufacturer: string
+  vendor: string
   notes: string
   caliber_id?: string
   // For bulk pricing calculation
@@ -29,6 +30,7 @@ export default function ComponentManager() {
     cost_per_unit: 0,
     unit: '',
     manufacturer: '',
+    vendor: '',
     notes: '',
     caliber_id: undefined,
     box_price: undefined,
@@ -113,6 +115,7 @@ export default function ComponentManager() {
             cost_per_unit: finalCostPerUnit,
             unit: formData.unit,
             manufacturer: formData.manufacturer || null,
+            vendor: formData.vendor || null,
             notes: formData.notes || null,
             box_price: boxPrice || null,
             quantity_per_box: quantityPerBox || null,
@@ -131,6 +134,7 @@ export default function ComponentManager() {
             cost_per_unit: finalCostPerUnit,
             unit: formData.unit,
             manufacturer: formData.manufacturer || null,
+            vendor: formData.vendor || null,
             notes: formData.notes || null,
             box_price: boxPrice || null,
             quantity_per_box: quantityPerBox || null,
@@ -148,6 +152,7 @@ export default function ComponentManager() {
         cost_per_unit: 0,
         unit: '',
         manufacturer: '',
+        vendor: '',
         notes: '',
         caliber_id: undefined,
         box_price: undefined,
@@ -181,6 +186,7 @@ export default function ComponentManager() {
       cost_per_unit: component.cost_per_unit,
       unit: component.unit,
       manufacturer: component.manufacturer || '',
+      vendor: component.vendor || '',
       notes: component.notes || '',
       caliber_id: component.caliber_id || undefined,
       box_price: component.box_price || undefined,
@@ -237,6 +243,7 @@ export default function ComponentManager() {
         const matchesSearch = 
           component.name.toLowerCase().includes(searchLower) ||
           (component.manufacturer && component.manufacturer.toLowerCase().includes(searchLower)) ||
+          (component.vendor && component.vendor.toLowerCase().includes(searchLower)) ||
           (component.notes && component.notes.toLowerCase().includes(searchLower))
         
         if (!matchesSearch) return false
@@ -310,6 +317,7 @@ export default function ComponentManager() {
                   cost_per_unit: 0,
                   unit: '',
                   manufacturer: '',
+                  vendor: '',
                   notes: '',
                   caliber_id: undefined,
                   box_price: undefined,
@@ -503,6 +511,21 @@ export default function ComponentManager() {
                     value={formData.manufacturer}
                     onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="e.g., Hornady, Federal, Winchester"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="vendor" className="block text-sm font-medium text-gray-700">
+                    Vendor/Store
+                  </label>
+                  <input
+                    type="text"
+                    id="vendor"
+                    value={formData.vendor}
+                    onChange={(e) => setFormData({ ...formData, vendor: e.target.value })}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="e.g., Midway USA, Brownells, Local Gun Shop"
                   />
                 </div>
 
@@ -781,6 +804,13 @@ export default function ComponentManager() {
                         </div>
                       )}
                       
+                      {component.vendor && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Vendor:</span>
+                          <span className="text-gray-900">{component.vendor}</span>
+                        </div>
+                      )}
+                      
                       {getCaliberName(component.caliber_id) && (
                         <div className="flex justify-between">
                           <span className="text-gray-500">Caliber:</span>
@@ -848,6 +878,9 @@ export default function ComponentManager() {
                         Manufacturer
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Vendor
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Caliber
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -879,6 +912,9 @@ export default function ComponentManager() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {component.manufacturer || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {component.vendor || '-'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {getCaliberName(component.caliber_id) || '-'}

@@ -19,6 +19,7 @@ export interface Component {
   cost_per_unit: number
   unit: string
   manufacturer?: string
+  vendor?: string
   notes?: string
   box_price?: number
   quantity_per_box?: number
@@ -58,6 +59,7 @@ export interface FactoryAmmo {
   cost_per_box: number
   rounds_per_box: number
   cost_per_round: number
+  vendor?: string
   created_by?: string
   created_at: string
   updated_at: string

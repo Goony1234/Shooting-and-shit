@@ -7,6 +7,7 @@ import type { FactoryAmmo, Caliber } from '../types/index'
 interface FactoryAmmoFormData {
   name: string
   manufacturer: string
+  vendor: string
   caliber: string
   caliber_id: string
   bullet_weight: number
@@ -23,6 +24,7 @@ export default function FactoryAmmoManager() {
   const [formData, setFormData] = useState<FactoryAmmoFormData>({
     name: '',
     manufacturer: '',
+    vendor: '',
     caliber: '',
     caliber_id: '',
     bullet_weight: 0,
@@ -85,6 +87,7 @@ export default function FactoryAmmoManager() {
           .update({
             name: formData.name,
             manufacturer: formData.manufacturer,
+            vendor: formData.vendor || null,
             caliber: formData.caliber,
             caliber_id: formData.caliber_id,
             bullet_weight: formData.bullet_weight,
@@ -101,6 +104,7 @@ export default function FactoryAmmoManager() {
           .insert([{
             name: formData.name,
             manufacturer: formData.manufacturer,
+            vendor: formData.vendor || null,
             caliber: formData.caliber,
             caliber_id: formData.caliber_id,
             bullet_weight: formData.bullet_weight,
@@ -127,6 +131,7 @@ export default function FactoryAmmoManager() {
     setFormData({
       name: '',
       manufacturer: '',
+      vendor: '',
       caliber: '',
       caliber_id: '',
       bullet_weight: 0,
@@ -142,6 +147,7 @@ export default function FactoryAmmoManager() {
     setFormData({
       name: ammo.name,
       manufacturer: ammo.manufacturer,
+      vendor: ammo.vendor || '',
       caliber: ammo.caliber,
       caliber_id: ammo.caliber_id || '',
       bullet_weight: ammo.bullet_weight,
@@ -279,15 +285,16 @@ export default function FactoryAmmoManager() {
               onClick={() => {
                 setShowForm(true)
                 setEditingAmmo(null)
-                setFormData({
-                  name: '',
-                  manufacturer: '',
-                  caliber: '',
-                  caliber_id: '',
-                  bullet_weight: 0,
-                  cost_per_box: 0,
-                  rounds_per_box: 20
-                })
+                            setFormData({
+              name: '',
+              manufacturer: '',
+              vendor: '',
+              caliber: '',
+              caliber_id: '',
+              bullet_weight: 0,
+              cost_per_box: 0,
+              rounds_per_box: 20
+            })
               }}
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-full sm:w-auto justify-center"
             >
@@ -460,6 +467,20 @@ export default function FactoryAmmoManager() {
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     placeholder="e.g., Federal, Winchester, Hornady"
                     required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="vendor" className="block text-sm font-medium text-gray-700">
+                    Vendor/Store
+                  </label>
+                  <input
+                    type="text"
+                    id="vendor"
+                    value={formData.vendor}
+                    onChange={(e) => setFormData({ ...formData, vendor: e.target.value })}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="e.g., Midway USA, Brownells, Local Gun Shop"
                   />
                 </div>
 

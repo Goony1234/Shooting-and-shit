@@ -39,6 +39,7 @@ export default function SavedLoads() {
     brass_reuse_option: 'new',
     brass_reuse_count: 5
   })
+  const [brassReuseCountInput, setBrassReuseCountInput] = useState<string>('5')
   const [calculation, setCalculation] = useState<LoadCalculation | null>(null)
   const [saveLoading, setSaveLoading] = useState(false)
 
@@ -117,6 +118,7 @@ export default function SavedLoads() {
           brass_reuse_option: duplicateData.brass_reuse_option || 'new',
           brass_reuse_count: duplicateData.brass_reuse_count || 5
         })
+        setBrassReuseCountInput((duplicateData.brass_reuse_count || 5).toString())
         setShowLoadBuilder(true)
         sessionStorage.removeItem('duplicateLoadData')
       }
@@ -210,6 +212,7 @@ export default function SavedLoads() {
       brass_reuse_option: load.brass_reuse_option || 'new',
       brass_reuse_count: load.brass_reuse_count || 5
     })
+    setBrassReuseCountInput((load.brass_reuse_count || 5).toString())
     
     // Show the load builder form
     setShowLoadBuilder(true)
@@ -218,6 +221,17 @@ export default function SavedLoads() {
   const handleSaveLoad = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!calculation || !user) return
+
+    // Validate brass reuse count if amortizing
+    if (formData.brass_reuse_option === 'amortize') {
+      const reuseCount = parseInt(brassReuseCountInput)
+      if (isNaN(reuseCount) || reuseCount < 1 || reuseCount > 20) {
+        alert('Please enter a valid number of reuses (1-20) for brass amortization.')
+        return
+      }
+      // Update the form data with the validated value
+      setFormData({ ...formData, brass_reuse_count: reuseCount })
+    }
 
     setSaveLoading(true)
     try {
@@ -263,6 +277,7 @@ export default function SavedLoads() {
         brass_reuse_option: 'new',
         brass_reuse_count: 5
       })
+      setBrassReuseCountInput('5')
       setCalculation(null)
       setShowLoadBuilder(false)
       
@@ -292,6 +307,7 @@ export default function SavedLoads() {
       brass_reuse_option: 'new',
       brass_reuse_count: 5
     })
+    setBrassReuseCountInput('5')
     setCalculation(null)
     setShowLoadBuilder(false)
   }
@@ -547,12 +563,22 @@ export default function SavedLoads() {
                           Number of times brass will be reused
                         </label>
                         <input
-                          type="number"
+                          type="text"
                           id="brass_reuse_count"
-                          min="1"
-                          max="20"
-                          value={formData.brass_reuse_count}
-                          onChange={(e) => setFormData({ ...formData, brass_reuse_count: parseInt(e.target.value) || 1 })}
+                          value={brassReuseCountInput}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            // Allow empty string or digits only
+                            if (value === '' || /^\d+$/.test(value)) {
+                              setBrassReuseCountInput(value)
+                              // Update the actual form data only if it's a valid number
+                              const numValue = parseInt(value)
+                              if (!isNaN(numValue) && numValue >= 1) {
+                                setFormData({ ...formData, brass_reuse_count: numValue })
+                              }
+                            }
+                          }}
+                          placeholder="Enter number of reuses (1-20)"
                           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         />
                       </div>
@@ -656,7 +682,25 @@ export default function SavedLoads() {
                       step="0.1"
                       min="0.1"
                       value={formData.powder_weight || ''}
-                      onChange={(e) => setFormData({ ...formData, powder_weight: parseFloat(e.target.value) || 0 })}
+                      onChange={(e) => {
+                        const value = e.target.value
+                        // Allow empty string while typing
+                        if (value === '') {
+                          setFormData({ ...formData, powder_weight: 0 })
+                        } else {
+                          const numValue = parseFloat(value)
+                          if (!isNaN(numValue) && numValue >= 0) {
+                            setFormData({ ...formData, powder_weight: numValue })
+                          }
+                        }
+                      }}
+                      onBlur={(e) => {
+                        // Ensure we have a valid value when user leaves the field
+                        const value = parseFloat(e.target.value)
+                        if (isNaN(value) || value < 0.1) {
+                          setFormData({ ...formData, powder_weight: 0.1 })
+                        }
+                      }}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                       required
                     />
