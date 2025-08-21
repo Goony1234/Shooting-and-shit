@@ -340,7 +340,6 @@ export default function SavedLoads() {
     const brass = components.find(c => c.id === load.brass_id)
     const powder = components.find(c => c.id === load.powder_id)
     const primer = components.find(c => c.id === load.primer_id)
-    const bullet = components.find(c => c.id === load.bullet_id)
 
     return (
       <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
