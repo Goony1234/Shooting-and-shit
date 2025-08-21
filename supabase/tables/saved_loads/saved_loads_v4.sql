@@ -1,31 +1,15 @@
 -- Saved loads table v4
--- Add user ownership and Row Level Security
+-- Add created_by column for user ownership tracking
 
--- Add user_id column to saved_loads table
+-- Add created_by column to saved_loads table
 ALTER TABLE saved_loads 
-ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
+ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES auth.users(id) ON DELETE CASCADE;
 
--- Add index for user_id
-CREATE INDEX IF NOT EXISTS idx_saved_loads_user_id ON saved_loads(user_id);
+-- Add index for created_by for performance
+CREATE INDEX IF NOT EXISTS idx_saved_loads_created_by ON saved_loads(created_by);
 
 -- Add comment to explain the field
-COMMENT ON COLUMN saved_loads.user_id IS 'User who owns this saved load (for privacy and data isolation)';
+COMMENT ON COLUMN saved_loads.created_by IS 'User who created this saved load';
 
--- Enable Row Level Security
-ALTER TABLE saved_loads ENABLE ROW LEVEL SECURITY;
-
--- Create RLS policy: Users can only see their own saved loads
-CREATE POLICY "Users can view own saved loads" ON saved_loads
-    FOR SELECT USING (auth.uid() = user_id);
-
--- Create RLS policy: Users can only insert their own saved loads
-CREATE POLICY "Users can insert own saved loads" ON saved_loads
-    FOR INSERT WITH CHECK (auth.uid() = user_id);
-
--- Create RLS policy: Users can only update their own saved loads
-CREATE POLICY "Users can update own saved loads" ON saved_loads
-    FOR UPDATE USING (auth.uid() = user_id);
-
--- Create RLS policy: Users can only delete their own saved loads
-CREATE POLICY "Users can delete own saved loads" ON saved_loads
-    FOR DELETE USING (auth.uid() = user_id);
+-- Note: Existing saved_loads without created_by will have NULL values
+-- This is acceptable as they represent loads created before user tracking was implemented

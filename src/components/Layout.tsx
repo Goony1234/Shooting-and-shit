@@ -17,9 +17,8 @@ interface NavItem {
 
 const navigation: NavItem[] = [
   // Reloading Calculator Section
-  { name: 'Build Load', href: '/', icon: Calculator, section: 'calculator' },
+  { name: 'Saved Loads', href: '/', icon: Database, section: 'calculator' },
   { name: 'Components', href: '/components', icon: Package, section: 'calculator' },
-  { name: 'Saved Loads', href: '/saved', icon: Database, section: 'calculator' },
   { name: 'Factory Ammo', href: '/factory-ammo', icon: Target, section: 'calculator' },
   { name: 'Compare', href: '/compare', icon: BarChart3, section: 'calculator' },
   

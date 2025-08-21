@@ -1,19 +1,57 @@
 import { useState, useEffect } from 'react'
-import { Database, Trash2, Eye, Copy } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { Database, Trash2, Eye, Copy, Plus, Save } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import type { SavedLoad, Component } from '../types/index'
+import { useAuth } from '../contexts/AuthContext'
+import type { SavedLoad, Component, LoadCalculation, Caliber } from '../types/index'
+
+interface LoadFormData {
+  name: string
+  caliber: string
+  caliber_id: string
+  brass_id: string
+  powder_id: string
+  powder_weight: number
+  primer_id: string
+  bullet_id: string
+  notes: string
+  brass_reuse_option: 'new' | 'reuse' | 'amortize'
+  brass_reuse_count: number
+}
 
 export default function SavedLoads() {
+  const { user } = useAuth()
   const [savedLoads, setSavedLoads] = useState<SavedLoad[]>([])
   const [components, setComponents] = useState<Component[]>([])
+  const [calibers, setCalibers] = useState<Caliber[]>([])
   const [selectedLoad, setSelectedLoad] = useState<SavedLoad | null>(null)
   const [loading, setLoading] = useState(true)
-  const navigate = useNavigate()
+  const [showLoadBuilder, setShowLoadBuilder] = useState(false)
+  const [formData, setFormData] = useState<LoadFormData>({
+    name: '',
+    caliber: '',
+    caliber_id: '',
+    brass_id: '',
+    powder_id: '',
+    powder_weight: 0,
+    primer_id: '',
+    bullet_id: '',
+    notes: '',
+    brass_reuse_option: 'new',
+    brass_reuse_count: 5
+  })
+  const [calculation, setCalculation] = useState<LoadCalculation | null>(null)
+  const [saveLoading, setSaveLoading] = useState(false)
 
   useEffect(() => {
-    Promise.all([fetchSavedLoads(), fetchComponents()])
+    Promise.all([fetchSavedLoads(), fetchComponents(), fetchCalibers()])
+    loadDuplicateData()
   }, [])
+
+  useEffect(() => {
+    if (showLoadBuilder) {
+      calculateCost()
+    }
+  }, [formData, components, showLoadBuilder])
 
   const fetchSavedLoads = async () => {
     try {
@@ -36,12 +74,106 @@ export default function SavedLoads() {
       const { data, error } = await supabase
         .from('components')
         .select('*')
+        .order('type', { ascending: true })
+        .order('name', { ascending: true })
 
       if (error) throw error
       setComponents(data || [])
     } catch (error) {
       console.error('Error fetching components:', error)
     }
+  }
+
+  const fetchCalibers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('calibers')
+        .select('*')
+        .order('category', { ascending: true })
+        .order('name', { ascending: true })
+
+      if (error) throw error
+      setCalibers(data || [])
+    } catch (error) {
+      console.error('Error fetching calibers:', error)
+    }
+  }
+
+  const loadDuplicateData = () => {
+    try {
+      const duplicateDataStr = sessionStorage.getItem('duplicateLoadData')
+      if (duplicateDataStr) {
+        const duplicateData = JSON.parse(duplicateDataStr)
+        setFormData({
+          name: duplicateData.name,
+          caliber: duplicateData.caliber,
+          caliber_id: duplicateData.caliber_id || '',
+          brass_id: duplicateData.brass_id || '',
+          powder_id: duplicateData.powder_id,
+          powder_weight: duplicateData.powder_weight,
+          primer_id: duplicateData.primer_id,
+          bullet_id: duplicateData.bullet_id,
+          notes: duplicateData.notes || '',
+          brass_reuse_option: duplicateData.brass_reuse_option || 'new',
+          brass_reuse_count: duplicateData.brass_reuse_count || 5
+        })
+        setShowLoadBuilder(true)
+        sessionStorage.removeItem('duplicateLoadData')
+      }
+    } catch (error) {
+      console.error('Error loading duplicate data:', error)
+    }
+  }
+
+  const calculateCost = () => {
+    // For reused brass, we don't need brass_id, but for new/amortized brass we do
+    const needsBrassId = formData.brass_reuse_option !== 'reuse'
+    
+    if ((needsBrassId && !formData.brass_id) || !formData.powder_id || !formData.primer_id || !formData.bullet_id || !formData.powder_weight) {
+      setCalculation(null)
+      return
+    }
+
+    const powder = components.find(c => c.id === formData.powder_id)
+    const primer = components.find(c => c.id === formData.primer_id)
+    const bullet = components.find(c => c.id === formData.bullet_id)
+
+    if (!powder || !primer || !bullet) {
+      setCalculation(null)
+      return
+    }
+
+    // Calculate brass cost based on reuse option
+    let brassCost = 0
+    if (formData.brass_reuse_option === 'reuse') {
+      brassCost = 0
+    } else {
+      const brass = components.find(c => c.id === formData.brass_id)
+      if (!brass) {
+        setCalculation(null)
+        return
+      }
+      
+      brassCost = brass.cost_per_unit
+      if (formData.brass_reuse_option === 'amortize') {
+        brassCost = brass.cost_per_unit / formData.brass_reuse_count
+      }
+    }
+
+    const powderCost = powder.cost_per_unit * formData.powder_weight
+    const primerCost = primer.cost_per_unit
+    const bulletCost = bullet.cost_per_unit
+
+    const totalCost = brassCost + powderCost + primerCost + bulletCost
+
+    setCalculation({
+      brass_cost: brassCost,
+      powder_cost: powderCost,
+      primer_cost: primerCost,
+      bullet_cost: bulletCost,
+      total_cost: totalCost,
+      cost_per_round: totalCost
+    })
   }
 
   const handleDelete = async (load: SavedLoad) => {
@@ -65,25 +197,103 @@ export default function SavedLoads() {
 
   const handleDuplicate = (load: SavedLoad) => {
     // Create a template object for the new load
-    const duplicateData = {
+    setFormData({
       name: `${load.name} (Copy)`,
       caliber: load.caliber,
-      caliber_id: load.caliber_id,
-      brass_id: load.brass_id,
+      caliber_id: load.caliber_id || '',
+      brass_id: load.brass_id || '',
       powder_id: load.powder_id,
       powder_weight: load.powder_weight,
       primer_id: load.primer_id,
       bullet_id: load.bullet_id,
-      notes: load.notes,
+      notes: load.notes || '',
       brass_reuse_option: load.brass_reuse_option || 'new',
       brass_reuse_count: load.brass_reuse_count || 5
-    }
-
-    // Store in sessionStorage to pass to BulletBuilder
-    sessionStorage.setItem('duplicateLoadData', JSON.stringify(duplicateData))
+    })
     
-    // Navigate to load builder
-    navigate('/')
+    // Show the load builder form
+    setShowLoadBuilder(true)
+  }
+
+  const handleSaveLoad = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!calculation || !user) return
+
+    setSaveLoading(true)
+    try {
+      // Prepare the load data
+      const loadData: any = {
+        name: formData.name,
+        caliber: formData.caliber,
+        caliber_id: formData.caliber_id,
+        brass_id: formData.brass_reuse_option === 'reuse' ? null : formData.brass_id,
+        powder_id: formData.powder_id,
+        powder_weight: formData.powder_weight,
+        primer_id: formData.primer_id,
+        bullet_id: formData.bullet_id,
+        notes: formData.notes,
+        brass_reuse_option: formData.brass_reuse_option,
+        brass_reuse_count: formData.brass_reuse_count,
+        total_cost: calculation.total_cost,
+        cost_per_round: calculation.total_cost
+      }
+
+      // Add created_by if user is available (will be null if column doesn't exist yet)
+      if (user?.id) {
+        loadData.created_by = user.id
+      }
+
+      const { error } = await supabase
+        .from('saved_loads')
+        .insert([loadData])
+
+      if (error) throw error
+
+      // Reset form and close builder
+      setFormData({
+        name: '',
+        caliber: '',
+        caliber_id: '',
+        brass_id: '',
+        powder_id: '',
+        powder_weight: 0,
+        primer_id: '',
+        bullet_id: '',
+        notes: '',
+        brass_reuse_option: 'new',
+        brass_reuse_count: 5
+      })
+      setCalculation(null)
+      setShowLoadBuilder(false)
+      
+      // Refresh saved loads
+      fetchSavedLoads()
+      
+      alert('Load saved successfully!')
+    } catch (error) {
+      console.error('Error saving load:', error)
+      alert('Error saving load. Please try again.')
+    } finally {
+      setSaveLoading(false)
+    }
+  }
+
+  const resetLoadBuilder = () => {
+    setFormData({
+      name: '',
+      caliber: '',
+      caliber_id: '',
+      brass_id: '',
+      powder_id: '',
+      powder_weight: 0,
+      primer_id: '',
+      bullet_id: '',
+      notes: '',
+      brass_reuse_option: 'new',
+      brass_reuse_count: 5
+    })
+    setCalculation(null)
+    setShowLoadBuilder(false)
   }
 
   const getComponentName = (id: string | undefined) => {
@@ -193,19 +403,361 @@ export default function SavedLoads() {
   }
 
   return (
-    <div className="h-full px-4 sm:px-6 lg:px-8 overflow-y-auto">
-      <div className="flex items-center mb-6">
-        <Database className="h-6 w-6 text-blue-600 mr-2" />
-        <h2 className="text-2xl font-bold text-gray-900">Saved Loads</h2>
-        <span className="ml-2 text-sm text-gray-500">({savedLoads.length} loads)</span>
-      </div>
+    <div className="h-full overflow-y-auto">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-4 sm:space-y-0">
+          <div className="flex items-center">
+            <Database className="h-6 w-6 text-blue-600 mr-2" />
+            <h2 className="text-2xl font-bold text-gray-900">Saved Loads</h2>
+            <span className="ml-2 text-sm text-gray-500">({savedLoads.length} loads)</span>
+          </div>
+          <button
+            onClick={() => setShowLoadBuilder(true)}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-full sm:w-auto justify-center"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Create New Load
+          </button>
+        </div>
+
+        {/* Load Builder Form */}
+        {showLoadBuilder && (
+          <div className="bg-white shadow rounded-lg mb-6">
+            <div className="px-4 py-5 sm:p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Create New Load</h3>
+                <button
+                  onClick={resetLoadBuilder}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <span className="sr-only">Close</span>
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveLoad} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                      Load Name
+                    </label>
+                    <input
+                      type="text"
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="caliber" className="block text-sm font-medium text-gray-700">
+                      Caliber
+                    </label>
+                    <select
+                      id="caliber"
+                      value={formData.caliber_id}
+                      onChange={(e) => {
+                        const selectedCaliber = calibers.find(c => c.id === e.target.value)
+                        setFormData({
+                          ...formData,
+                          caliber_id: e.target.value,
+                          caliber: selectedCaliber ? selectedCaliber.display_name : ''
+                        })
+                      }}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      required
+                    >
+                      <option value="">Select caliber...</option>
+                      {['rifle', 'pistol', 'magnum'].map(category => {
+                        const categoryCalibers = calibers.filter(c => c.category === category)
+                        if (categoryCalibers.length === 0) return null
+                        
+                        return (
+                          <optgroup key={category} label={category.charAt(0).toUpperCase() + category.slice(1)}>
+                            {categoryCalibers.map(caliber => (
+                              <option key={caliber.id} value={caliber.id}>
+                                {caliber.display_name}
+                              </option>
+                            ))}
+                          </optgroup>
+                        )
+                      })}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Brass Reuse Options - Must come before component selection */}
+                <div className="border-t pt-6">
+                  <h4 className="text-lg font-medium text-gray-900 mb-4">Brass Cost Calculation</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        How do you want to calculate brass cost?
+                      </label>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="flex items-center">
+                          <input
+                            id="brass-new"
+                            name="brass-reuse"
+                            type="radio"
+                            checked={formData.brass_reuse_option === 'new'}
+                            onChange={() => setFormData({ ...formData, brass_reuse_option: 'new', brass_id: '' })}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                          />
+                          <label htmlFor="brass-new" className="ml-2 block text-sm text-gray-900">
+                            New brass (full cost per round)
+                          </label>
+                        </div>
+                        <div className="flex items-center">
+                          <input
+                            id="brass-reuse"
+                            name="brass-reuse"
+                            type="radio"
+                            checked={formData.brass_reuse_option === 'reuse'}
+                            onChange={() => setFormData({ ...formData, brass_reuse_option: 'reuse', brass_id: '' })}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                          />
+                          <label htmlFor="brass-reuse" className="ml-2 block text-sm text-gray-900">
+                            Reused brass (no brass cost)
+                          </label>
+                        </div>
+                        <div className="flex items-center">
+                          <input
+                            id="brass-amortize"
+                            name="brass-reuse"
+                            type="radio"
+                            checked={formData.brass_reuse_option === 'amortize'}
+                            onChange={() => setFormData({ ...formData, brass_reuse_option: 'amortize', brass_id: '' })}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                          />
+                          <label htmlFor="brass-amortize" className="ml-2 block text-sm text-gray-900">
+                            Amortize brass cost over multiple uses
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    {formData.brass_reuse_option === 'amortize' && (
+                      <div className="max-w-xs">
+                        <label htmlFor="brass_reuse_count" className="block text-sm font-medium text-gray-700">
+                          Number of times brass will be reused
+                        </label>
+                        <input
+                          type="number"
+                          id="brass_reuse_count"
+                          min="1"
+                          max="20"
+                          value={formData.brass_reuse_count}
+                          onChange={(e) => setFormData({ ...formData, brass_reuse_count: parseInt(e.target.value) || 1 })}
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Component Selection */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Brass Selection - Only show if not reusing brass */}
+                  {formData.brass_reuse_option !== 'reuse' && (
+                    <div>
+                      <label htmlFor="brass" className="block text-sm font-medium text-gray-700">
+                        Brass {formData.brass_reuse_option === 'amortize' ? '(cost will be amortized)' : ''}
+                      </label>
+                      <select
+                        id="brass"
+                        value={formData.brass_id}
+                        onChange={(e) => setFormData({ ...formData, brass_id: e.target.value })}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        required
+                      >
+                        <option value="">Select brass...</option>
+                        {components
+                          .filter(c => c.type === 'brass' && (!formData.caliber_id || c.caliber_id === formData.caliber_id))
+                          .map(component => (
+                            <option key={component.id} value={component.id}>
+                              {component.manufacturer} {component.name} - ${component.cost_per_unit.toFixed(4)}/{component.unit}
+                              {formData.brass_reuse_option === 'amortize' && ` (${(component.cost_per_unit / formData.brass_reuse_count).toFixed(4)} amortized)`}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                  )}
+                  
+                  {/* Reused Brass Info */}
+                  {formData.brass_reuse_option === 'reuse' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Brass
+                      </label>
+                      <div className="mt-1 px-3 py-2 bg-green-50 border border-green-200 rounded-md">
+                        <p className="text-sm text-green-800">
+                          Using reused brass - no brass cost will be calculated
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <label htmlFor="bullet" className="block text-sm font-medium text-gray-700">
+                      Bullet
+                    </label>
+                    <select
+                      id="bullet"
+                      value={formData.bullet_id}
+                      onChange={(e) => setFormData({ ...formData, bullet_id: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      required
+                    >
+                      <option value="">Select bullet...</option>
+                      {components
+                        .filter(c => c.type === 'bullet')
+                        .map(component => (
+                          <option key={component.id} value={component.id}>
+                            {component.manufacturer} {component.name} - ${component.cost_per_unit.toFixed(4)}/{component.unit}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="powder" className="block text-sm font-medium text-gray-700">
+                      Powder
+                    </label>
+                    <select
+                      id="powder"
+                      value={formData.powder_id}
+                      onChange={(e) => setFormData({ ...formData, powder_id: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      required
+                    >
+                      <option value="">Select powder...</option>
+                      {components
+                        .filter(c => c.type === 'powder')
+                        .map(component => (
+                          <option key={component.id} value={component.id}>
+                            {component.manufacturer} {component.name} - ${component.cost_per_unit.toFixed(6)}/{component.unit}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="powder_weight" className="block text-sm font-medium text-gray-700">
+                      Powder Weight (grains)
+                    </label>
+                    <input
+                      type="number"
+                      id="powder_weight"
+                      step="0.1"
+                      min="0.1"
+                      value={formData.powder_weight || ''}
+                      onChange={(e) => setFormData({ ...formData, powder_weight: parseFloat(e.target.value) || 0 })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="primer" className="block text-sm font-medium text-gray-700">
+                      Primer
+                    </label>
+                    <select
+                      id="primer"
+                      value={formData.primer_id}
+                      onChange={(e) => setFormData({ ...formData, primer_id: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      required
+                    >
+                      <option value="">Select primer...</option>
+                      {components
+                        .filter(c => c.type === 'primer')
+                        .map(component => (
+                          <option key={component.id} value={component.id}>
+                            {component.manufacturer} {component.name} - ${component.cost_per_unit.toFixed(4)}/{component.unit}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Cost Calculation Display */}
+                {calculation && (
+                  <div className="border-t pt-6">
+                    <h4 className="text-lg font-medium text-gray-900 mb-4">Cost Breakdown</h4>
+                    <div className="bg-blue-50 rounded-lg p-4">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                        <div className="text-center">
+                          <div className="text-sm text-blue-600">Brass</div>
+                          <div className="text-lg font-bold text-blue-900">${calculation.brass_cost.toFixed(4)}</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-sm text-blue-600">Powder</div>
+                          <div className="text-lg font-bold text-blue-900">${calculation.powder_cost.toFixed(4)}</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-sm text-blue-600">Primer</div>
+                          <div className="text-lg font-bold text-blue-900">${calculation.primer_cost.toFixed(4)}</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-sm text-blue-600">Bullet</div>
+                          <div className="text-lg font-bold text-blue-900">${calculation.bullet_cost.toFixed(4)}</div>
+                        </div>
+                      </div>
+                      <div className="text-center border-t border-blue-200 pt-4">
+                        <div className="text-lg text-blue-600">Total Cost per Round</div>
+                        <div className="text-3xl font-bold text-blue-900">${calculation.total_cost.toFixed(4)}</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
+                    Notes
+                  </label>
+                  <textarea
+                    id="notes"
+                    rows={3}
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="Optional notes about this load..."
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={resetLoadBuilder}
+                    className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saveLoading || !calculation}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    {saveLoading ? 'Saving...' : 'Save Load'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
       {savedLoads.length === 0 ? (
         <div className="text-center py-12">
           <Database className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900">No saved loads</h3>
           <p className="mt-1 text-sm text-gray-500">
-            Get started by building your first load.
+            Get started by creating your first load using the button above.
           </p>
         </div>
       ) : (
@@ -389,6 +941,7 @@ export default function SavedLoads() {
           onClose={() => setSelectedLoad(null)}
         />
       )}
+      </div>
     </div>
   )
 }

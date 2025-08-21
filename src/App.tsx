@@ -1,6 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
-import BulletBuilder from './components/BulletBuilder'
 import ComponentManager from './components/ComponentManager'
 import SavedLoads from './components/SavedLoads'
 import CostComparison from './components/CostComparison'
@@ -30,9 +29,8 @@ function AppContent() {
   return (
     <Layout>
       <Routes>
-        <Route path="/" element={<BulletBuilder />} />
+        <Route path="/" element={<SavedLoads />} />
         <Route path="/components" element={<ComponentManager />} />
-        <Route path="/saved" element={<SavedLoads />} />
         <Route path="/factory-ammo" element={<FactoryAmmoManager />} />
         <Route path="/compare" element={<CostComparison />} />
         <Route path="/load-development" element={<LoadDevelopment />} />
