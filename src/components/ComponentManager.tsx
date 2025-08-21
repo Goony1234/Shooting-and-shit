@@ -876,31 +876,16 @@ export default function ComponentManager() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Name
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Component Details
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Manufacturer
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Source & Cost
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Vendor
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Info
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Caliber
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Cost per Unit
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Created By
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Notes
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Created
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
@@ -908,27 +893,31 @@ export default function ComponentManager() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {typeComponents.map((component) => (
                       <tr key={component.id}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(component.type)}`}>
+                        {/* Component Details Column */}
+                        <td className="px-4 py-4">
+                          <div className="flex items-start space-x-3">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(component.type)} flex-shrink-0`}>
                               {component.type}
                             </span>
-                            <span className="ml-2 text-sm font-medium text-gray-900">
-                              {component.name}
-                            </span>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-medium text-gray-900 truncate">
+                                {component.name}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {component.manufacturer || 'No manufacturer'}
+                              </div>
+                              {getCaliberName(component.caliber_id) && (
+                                <div className="text-xs text-gray-500">
+                                  {getCaliberName(component.caliber_id)}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {component.manufacturer || '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {component.vendor || '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {getCaliberName(component.caliber_id) || '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
+                        
+                        {/* Source & Cost Column */}
+                        <td className="px-4 py-4">
+                          <div className="text-sm font-medium text-gray-900">
                             ${component.cost_per_unit.toFixed(component.type === 'powder' ? 6 : 4)} / {component.unit}
                           </div>
                           {component.box_price && component.quantity_per_box && (
@@ -940,31 +929,40 @@ export default function ComponentManager() {
                               )}
                             </div>
                           )}
+                          {component.vendor && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              📍 {component.vendor}
+                            </div>
+                          )}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <div className="flex items-center">
-                            {isOwnComponent(component) ? (
-                              <>
-                                <User className="h-3 w-3 text-blue-600 mr-1" />
-                                <span className="text-blue-600 font-medium">You</span>
-                              </>
-                            ) : component.created_by ? (
-                              <>
-                                <User className="h-3 w-3 text-gray-400 mr-1" />
-                                <span>Community</span>
-                              </>
-                            ) : (
-                              <span className="text-gray-400">System</span>
+                        
+                        {/* Info Column */}
+                        <td className="px-4 py-4">
+                          <div className="text-xs text-gray-500 space-y-1">
+                            <div className="flex items-center">
+                              {isOwnComponent(component) ? (
+                                <>
+                                  <User className="h-3 w-3 text-blue-600 mr-1" />
+                                  <span className="text-blue-600 font-medium">You</span>
+                                </>
+                              ) : component.created_by ? (
+                                <>
+                                  <User className="h-3 w-3 text-gray-400 mr-1" />
+                                  <span>Community</span>
+                                </>
+                              ) : (
+                                <span className="text-gray-400">System</span>
+                              )}
+                            </div>
+                            <div>📅 {new Date(component.created_at).toLocaleDateString()}</div>
+                            {component.notes && (
+                              <div className="max-w-xs truncate">💬 {component.notes}</div>
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                          {component.notes || '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(component.created_at).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        
+                        {/* Actions Column */}
+                        <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                           {isOwnComponent(component) ? (
                             <>
                               <button

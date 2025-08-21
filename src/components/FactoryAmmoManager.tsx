@@ -217,7 +217,8 @@ export default function FactoryAmmoManager() {
         const matchesSearch = 
           ammo.name.toLowerCase().includes(searchLower) ||
           ammo.manufacturer.toLowerCase().includes(searchLower) ||
-          ammo.caliber.toLowerCase().includes(searchLower)
+          ammo.caliber.toLowerCase().includes(searchLower) ||
+          (ammo.vendor && ammo.vendor.toLowerCase().includes(searchLower))
         
         if (!matchesSearch) return false
       }
@@ -682,6 +683,13 @@ export default function FactoryAmmoManager() {
                           <span className="text-gray-900">${ammo.cost_per_box.toFixed(2)} / {ammo.rounds_per_box} rounds</span>
                         </div>
                         
+                        {ammo.vendor && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Vendor:</span>
+                            <span className="text-gray-900">{ammo.vendor}</span>
+                          </div>
+                        )}
+                        
                         <div className="flex justify-between">
                           <span className="text-gray-500">Created by:</span>
                           <div className="flex items-center">
@@ -715,25 +723,16 @@ export default function FactoryAmmoManager() {
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Product
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Product Details
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Bullet Weight
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Pricing & Source
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Box Price
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Info
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Cost per Round
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Created By
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Created
-                        </th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Actions
                         </th>
                       </tr>
@@ -741,44 +740,58 @@ export default function FactoryAmmoManager() {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {caliberAmmo.map((ammo) => (
                         <tr key={ammo.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          {/* Product Details Column */}
+                          <td className="px-4 py-4">
+                            <div className="min-w-0">
+                              <div className="text-sm font-medium text-gray-900">
+                                {ammo.manufacturer}
+                              </div>
+                              <div className="text-sm text-gray-500">{ammo.name}</div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                {ammo.bullet_weight} gr • {ammo.caliber}
+                              </div>
+                            </div>
+                          </td>
+                          
+                          {/* Pricing & Source Column */}
+                          <td className="px-4 py-4">
                             <div className="text-sm font-medium text-gray-900">
-                              {ammo.manufacturer}
+                              ${ammo.cost_per_round.toFixed(4)} / round
                             </div>
-                            <div className="text-sm text-gray-500">{ammo.name}</div>
+                            <div className="text-xs text-gray-500">
+                              Box: ${ammo.cost_per_box.toFixed(2)} / {ammo.rounds_per_box} rounds
+                            </div>
+                            {ammo.vendor && (
+                              <div className="text-xs text-gray-500 mt-1">
+                                📍 {ammo.vendor}
+                              </div>
+                            )}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {ammo.bullet_weight} gr
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            ${ammo.cost_per_box.toFixed(2)} / {ammo.rounds_per_box} rounds
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">
-                              ${ammo.cost_per_round.toFixed(4)}
+                          
+                          {/* Info Column */}
+                          <td className="px-4 py-4">
+                            <div className="text-xs text-gray-500 space-y-1">
+                              <div className="flex items-center">
+                                {isOwnAmmo(ammo) ? (
+                                  <>
+                                    <User className="h-3 w-3 text-blue-600 mr-1" />
+                                    <span className="text-blue-600 font-medium">You</span>
+                                  </>
+                                ) : ammo.created_by ? (
+                                  <>
+                                    <User className="h-3 w-3 text-gray-400 mr-1" />
+                                    <span>Community</span>
+                                  </>
+                                ) : (
+                                  <span className="text-gray-400">System</span>
+                                )}
+                              </div>
+                              <div>📅 {new Date(ammo.created_at).toLocaleDateString()}</div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div className="flex items-center">
-                              {isOwnAmmo(ammo) ? (
-                                <>
-                                  <User className="h-3 w-3 text-blue-600 mr-1" />
-                                  <span className="text-blue-600 font-medium">You</span>
-                                </>
-                              ) : ammo.created_by ? (
-                                <>
-                                  <User className="h-3 w-3 text-gray-400 mr-1" />
-                                  <span>Community</span>
-                                </>
-                              ) : (
-                                <span className="text-gray-400">System</span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {new Date(ammo.created_at).toLocaleDateString()}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          
+                          {/* Actions Column */}
+                          <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                             {isOwnAmmo(ammo) ? (
                               <>
                                 <button
