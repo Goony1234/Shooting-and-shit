@@ -325,7 +325,7 @@ export default function ComponentManager() {
 
       {/* Filter Panel */}
       {showFilters && (
-        <div className="bg-white shadow rounded-lg mb-6">
+        <div className="bg-white shadow rounded-lg mb-6 z-10">
           <div className="px-4 py-5 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-medium text-gray-900">Filter Components</h3>
