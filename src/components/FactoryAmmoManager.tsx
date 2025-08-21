@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Plus, Edit2, Trash2, Target } from 'lucide-react'
+import { Plus, Edit2, Trash2, Target, User } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../contexts/AuthContext'
 import type { FactoryAmmo, Caliber } from '../types/index'
 
 interface FactoryAmmoFormData {
@@ -14,6 +15,7 @@ interface FactoryAmmoFormData {
 }
 
 export default function FactoryAmmoManager() {
+  const { user } = useAuth()
   const [factoryAmmo, setFactoryAmmo] = useState<FactoryAmmo[]>([])
   const [calibers, setCalibers] = useState<Caliber[]>([])
   const [showForm, setShowForm] = useState(false)
@@ -97,7 +99,8 @@ export default function FactoryAmmoManager() {
             caliber_id: formData.caliber_id,
             bullet_weight: formData.bullet_weight,
             cost_per_box: formData.cost_per_box,
-            rounds_per_box: formData.rounds_per_box
+            rounds_per_box: formData.rounds_per_box,
+            created_by: user?.id
           }])
 
         if (error) throw error
@@ -184,6 +187,10 @@ export default function FactoryAmmoManager() {
     }
   }
 
+  const isOwnAmmo = (ammo: FactoryAmmo) => {
+    return ammo.created_by === user?.id
+  }
+
   const groupedAmmo = factoryAmmo.reduce((acc, ammo) => {
     if (!acc[ammo.caliber]) {
       acc[ammo.caliber] = []
@@ -193,7 +200,7 @@ export default function FactoryAmmoManager() {
   }, {} as Record<string, FactoryAmmo[]>)
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="h-full px-4 sm:px-6 lg:px-8 overflow-y-auto">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center">
           <Target className="h-6 w-6 text-blue-600 mr-2" />
@@ -416,6 +423,9 @@ export default function FactoryAmmoManager() {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Cost per Round
                         </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Created By
+                        </th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Actions
                         </th>
@@ -441,21 +451,44 @@ export default function FactoryAmmoManager() {
                               ${ammo.cost_per_round.toFixed(4)}
                             </div>
                           </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <div className="flex items-center">
+                              {isOwnAmmo(ammo) ? (
+                                <>
+                                  <User className="h-3 w-3 text-blue-600 mr-1" />
+                                  <span className="text-blue-600 font-medium">You</span>
+                                </>
+                              ) : ammo.created_by ? (
+                                <>
+                                  <User className="h-3 w-3 text-gray-400 mr-1" />
+                                  <span>Community</span>
+                                </>
+                              ) : (
+                                <span className="text-gray-400">System</span>
+                              )}
+                            </div>
+                          </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button
-                              onClick={() => handleEdit(ammo)}
-                              className="text-blue-600 hover:text-blue-900 mr-3"
-                              title="Edit"
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(ammo)}
-                              className="text-red-600 hover:text-red-900"
-                              title="Delete"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                            {isOwnAmmo(ammo) ? (
+                              <>
+                                <button
+                                  onClick={() => handleEdit(ammo)}
+                                  className="text-blue-600 hover:text-blue-900 mr-3"
+                                  title="Edit"
+                                >
+                                  <Edit2 className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(ammo)}
+                                  className="text-red-600 hover:text-red-900"
+                                  title="Delete"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </>
+                            ) : (
+                              <span className="text-gray-400 text-xs">View only</span>
+                            )}
                           </td>
                         </tr>
                       ))}

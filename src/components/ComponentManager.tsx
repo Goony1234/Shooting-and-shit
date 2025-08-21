@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Plus, Edit2, Trash2, Package } from 'lucide-react'
+import { Plus, Edit2, Trash2, Package, User } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../contexts/AuthContext'
 import type { Component, Caliber } from '../types/index'
 
 interface ComponentFormData {
@@ -17,6 +18,7 @@ interface ComponentFormData {
 }
 
 export default function ComponentManager() {
+  const { user } = useAuth()
   const [components, setComponents] = useState<Component[]>([])
   const [calibers, setCalibers] = useState<Caliber[]>([])
   const [showForm, setShowForm] = useState(false)
@@ -126,7 +128,8 @@ export default function ComponentManager() {
             notes: formData.notes || null,
             box_price: boxPrice || null,
             quantity_per_box: quantityPerBox || null,
-            caliber_id: formData.caliber_id || null
+            caliber_id: formData.caliber_id || null,
+            created_by: user?.id
           }])
 
         if (error) throw error
@@ -216,6 +219,10 @@ export default function ComponentManager() {
     return caliber ? caliber.display_name : null
   }
 
+  const isOwnComponent = (component: Component) => {
+    return component.created_by === user?.id
+  }
+
   const groupedComponents = components.reduce((acc, component) => {
     if (!acc[component.type]) {
       acc[component.type] = []
@@ -225,7 +232,7 @@ export default function ComponentManager() {
   }, {} as Record<string, Component[]>)
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="h-full px-4 sm:px-6 lg:px-8 overflow-y-auto">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center">
           <Package className="h-6 w-6 text-blue-600 mr-2" />
@@ -555,6 +562,9 @@ export default function ComponentManager() {
                         Cost per Unit
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Created By
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Notes
                       </th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -595,22 +605,47 @@ export default function ComponentManager() {
                             </div>
                           )}
                         </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <div className="flex items-center">
+                            {isOwnComponent(component) ? (
+                              <>
+                                <User className="h-3 w-3 text-blue-600 mr-1" />
+                                <span className="text-blue-600 font-medium">You</span>
+                              </>
+                            ) : component.created_by ? (
+                              <>
+                                <User className="h-3 w-3 text-gray-400 mr-1" />
+                                <span>Community</span>
+                              </>
+                            ) : (
+                              <span className="text-gray-400">System</span>
+                            )}
+                          </div>
+                        </td>
                         <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                           {component.notes || '-'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <button
-                            onClick={() => handleEdit(component)}
-                            className="text-blue-600 hover:text-blue-900 mr-3"
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(component)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                          {isOwnComponent(component) ? (
+                            <>
+                              <button
+                                onClick={() => handleEdit(component)}
+                                className="text-blue-600 hover:text-blue-900 mr-3"
+                                title="Edit"
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(component)}
+                                className="text-red-600 hover:text-red-900"
+                                title="Delete"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </>
+                          ) : (
+                            <span className="text-gray-400 text-xs">View only</span>
+                          )}
                         </td>
                       </tr>
                     ))}

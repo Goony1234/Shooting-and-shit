@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Calculator, Package, Database, BarChart3, Target, FlaskConical, Menu, X } from 'lucide-react'
+import { Calculator, Package, Database, BarChart3, Target, FlaskConical, Menu, X, User, LogOut } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
+import UserProfile from './UserProfile'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -92,13 +94,14 @@ export default function Layout({ children }: LayoutProps) {
               <h1 className="text-lg font-semibold text-gray-900">
                 {sections.find(s => s.id === getCurrentSection())?.name}
               </h1>
+              <UserProfile />
             </div>
           </div>
         </div>
 
         {/* Page content */}
-        <main className="flex-1 relative overflow-y-auto focus:outline-none">
-          <div className="py-6">
+        <main className="flex-1 relative overflow-hidden focus:outline-none">
+          <div className="h-full py-6">
             {children}
           </div>
         </main>
@@ -113,6 +116,14 @@ interface SidebarContentProps {
 }
 
 function SidebarContent({ getNavigationForSection, isActiveLink }: SidebarContentProps) {
+  const { user, signOut } = useAuth()
+
+  const handleSignOut = async () => {
+    if (confirm('Are you sure you want to sign out?')) {
+      await signOut()
+    }
+  }
+
   return (
     <div className="flex-1 flex flex-col min-h-0 border-r border-gray-200 bg-white">
       {/* Logo */}
@@ -159,6 +170,32 @@ function SidebarContent({ getNavigationForSection, isActiveLink }: SidebarConten
             </div>
           ))}
         </nav>
+      </div>
+
+      {/* User Account Section */}
+      <div className="flex-shrink-0 border-t border-gray-200 p-4">
+        <div className="flex items-center">
+          <div className="flex-shrink-0">
+            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+              <User className="w-4 h-4 text-white" />
+            </div>
+          </div>
+          <div className="ml-3 flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-900 truncate">
+              {user?.email || 'User'}
+            </p>
+            <p className="text-xs text-gray-500">
+              Signed in
+            </p>
+          </div>
+          <button
+            onClick={handleSignOut}
+            className="ml-3 flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+            title="Sign out"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   )

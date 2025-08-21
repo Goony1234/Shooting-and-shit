@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Save, Calculator, Copy } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../contexts/AuthContext'
 import type { Component, LoadCalculation, Caliber } from '../types/index'
 
 interface LoadFormData {
@@ -19,6 +20,7 @@ interface LoadFormData {
 }
 
 export default function BulletBuilder() {
+  const { user } = useAuth()
   const [components, setComponents] = useState<Component[]>([])
   const [calibers, setCalibers] = useState<Caliber[]>([])
   const [formData, setFormData] = useState<LoadFormData>({
@@ -184,7 +186,8 @@ export default function BulletBuilder() {
           cost_per_round: calculation.cost_per_round,
           notes: formData.notes || null,
           brass_reuse_option: formData.brass_reuse_option,
-          brass_reuse_count: formData.brass_reuse_count
+          brass_reuse_count: formData.brass_reuse_count,
+          user_id: user?.id
         }])
 
       if (error) throw error
@@ -252,9 +255,9 @@ export default function BulletBuilder() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="bg-white shadow rounded-lg">
-        <div className="px-4 py-5 sm:p-6">
+    <div className="h-full px-4 sm:px-6 lg:px-8">
+      <div className="h-full bg-white shadow rounded-lg">
+        <div className="h-full px-4 py-5 sm:p-6 overflow-y-auto">
           <div className="flex items-center mb-6">
             <Calculator className="h-6 w-6 text-blue-600 mr-2" />
             <h2 className="text-2xl font-bold text-gray-900">Build Your Load</h2>

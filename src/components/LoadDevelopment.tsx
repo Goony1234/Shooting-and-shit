@@ -2,7 +2,7 @@ import { FlaskConical, Target, TrendingUp, BarChart3 } from 'lucide-react'
 
 export default function LoadDevelopment() {
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="h-full px-4 sm:px-6 lg:px-8 overflow-y-auto">
       <div className="flex items-center mb-6">
         <FlaskConical className="h-6 w-6 text-blue-600 mr-2" />
         <h2 className="text-2xl font-bold text-gray-900">Load Development</h2>
