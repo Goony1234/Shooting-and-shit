@@ -318,6 +318,24 @@ export default function SavedLoads() {
     return component ? `${component.manufacturer || ''} ${component.name}`.trim() : 'Unknown'
   }
 
+  const getBulletDisplayInfo = (id: string | undefined) => {
+    if (!id) return 'Unknown'
+    const component = components.find(c => c.id === id)
+    if (!component) return 'Unknown'
+    
+    let bulletInfo = `${component.manufacturer || ''} ${component.name}`.trim()
+    
+    if (component.bullet_type && component.bullet_grain) {
+      bulletInfo += ` (${component.bullet_type}, ${component.bullet_grain}gr)`
+    } else if (component.bullet_type) {
+      bulletInfo += ` (${component.bullet_type})`
+    } else if (component.bullet_grain) {
+      bulletInfo += ` (${component.bullet_grain}gr)`
+    }
+    
+    return bulletInfo
+  }
+
   const LoadDetailsModal = ({ load, onClose }: { load: SavedLoad, onClose: () => void }) => {
     const brass = components.find(c => c.id === load.brass_id)
     const powder = components.find(c => c.id === load.powder_id)
@@ -374,7 +392,7 @@ export default function SavedLoads() {
                 <div>
                   <span className="text-sm font-medium text-gray-500">Bullet:</span>
                   <div className="mt-1 text-sm text-gray-900">
-                    {bullet ? `${bullet.manufacturer || ''} ${bullet.name}`.trim() : 'Unknown'}
+                    {getBulletDisplayInfo(load.bullet_id)}
                   </div>
                 </div>
               </div>
@@ -867,7 +885,7 @@ export default function SavedLoads() {
                   </div>
                   <div>
                     <span className="font-medium text-gray-700">Bullet:</span>
-                    <div className="text-gray-600">{getComponentName(load.bullet_id)}</div>
+                    <div className="text-gray-600">{getBulletDisplayInfo(load.bullet_id)}</div>
                   </div>
                   <div>
                     <span className="font-medium text-gray-700">Powder:</span>
@@ -935,7 +953,7 @@ export default function SavedLoads() {
                           <span className="font-medium">Pr:</span> {getComponentName(load.primer_id)}
                         </div>
                         <div className="text-xs">
-                          <span className="font-medium">Bu:</span> {getComponentName(load.bullet_id)}
+                          <span className="font-medium">Bu:</span> {getBulletDisplayInfo(load.bullet_id)}
                         </div>
                       </div>
                     </td>

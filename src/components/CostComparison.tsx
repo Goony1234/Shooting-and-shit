@@ -80,6 +80,24 @@ export default function CostComparison() {
     return component ? `${component.manufacturer || ''} ${component.name}`.trim() : 'Unknown'
   }
 
+  const getBulletDisplayInfo = (id: string | undefined) => {
+    if (!id) return 'Unknown'
+    const component = components.find(c => c.id === id)
+    if (!component) return 'Unknown'
+    
+    let bulletInfo = `${component.manufacturer || ''} ${component.name}`.trim()
+    
+    if (component.bullet_type && component.bullet_grain) {
+      bulletInfo += ` (${component.bullet_type}, ${component.bullet_grain}gr)`
+    } else if (component.bullet_type) {
+      bulletInfo += ` (${component.bullet_type})`
+    } else if (component.bullet_grain) {
+      bulletInfo += ` (${component.bullet_grain}gr)`
+    }
+    
+    return bulletInfo
+  }
+
   const getBrassDisplayInfo = (load: SavedLoad) => {
     if (load.brass_reuse_option === 'reuse') {
       return { name: 'Reused Brass', cost: '$0.0000' }
@@ -198,7 +216,7 @@ export default function CostComparison() {
                   <div>Brass: {getBrassDisplayInfo(selectedItem).name} ({getBrassDisplayInfo(selectedItem).cost})</div>
                   <div>Powder: {getComponentName(selectedItem.powder_id)} ({selectedItem.powder_weight}gr)</div>
                   <div>Primer: {getComponentName(selectedItem.primer_id)}</div>
-                  <div>Bullet: {getComponentName(selectedItem.bullet_id)}</div>
+                  <div>Bullet: {getBulletDisplayInfo(selectedItem.bullet_id)}</div>
                 </div>
               )}
               {type === 'factory' && isFactoryAmmo(selectedItem) && (

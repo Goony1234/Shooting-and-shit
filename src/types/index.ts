@@ -24,6 +24,8 @@ export interface Component {
   box_price?: number
   quantity_per_box?: number
   caliber_id?: string
+  bullet_type?: string
+  bullet_grain?: number
   created_by?: string
   created_at: string
   updated_at: string

@@ -13,6 +13,8 @@ interface ComponentFormData {
   vendor: string
   notes: string
   caliber_id?: string
+  bullet_type: string
+  bullet_grain: number
   // For bulk pricing calculation
   box_price?: number
   quantity_per_box?: number
@@ -33,6 +35,8 @@ export default function ComponentManager() {
     vendor: '',
     notes: '',
     caliber_id: undefined,
+    bullet_type: '',
+    bullet_grain: 0,
     box_price: undefined,
     quantity_per_box: undefined
   })
@@ -119,7 +123,9 @@ export default function ComponentManager() {
             notes: formData.notes || null,
             box_price: boxPrice || null,
             quantity_per_box: quantityPerBox || null,
-            caliber_id: formData.caliber_id || null
+            caliber_id: formData.caliber_id || null,
+            bullet_type: formData.type === 'bullet' ? (formData.bullet_type || null) : null,
+            bullet_grain: formData.type === 'bullet' ? (formData.bullet_grain || null) : null
           })
           .eq('id', editingComponent.id)
 
@@ -139,6 +145,8 @@ export default function ComponentManager() {
             box_price: boxPrice || null,
             quantity_per_box: quantityPerBox || null,
             caliber_id: formData.caliber_id || null,
+            bullet_type: formData.type === 'bullet' ? (formData.bullet_type || null) : null,
+            bullet_grain: formData.type === 'bullet' ? (formData.bullet_grain || null) : null,
             created_by: user?.id
           }])
 
@@ -155,6 +163,8 @@ export default function ComponentManager() {
         vendor: '',
         notes: '',
         caliber_id: undefined,
+        bullet_type: '',
+        bullet_grain: 0,
         box_price: undefined,
         quantity_per_box: undefined
       })
@@ -189,6 +199,8 @@ export default function ComponentManager() {
       vendor: component.vendor || '',
       notes: component.notes || '',
       caliber_id: component.caliber_id || undefined,
+      bullet_type: component.bullet_type || '',
+      bullet_grain: component.bullet_grain || 0,
       box_price: component.box_price || undefined,
       quantity_per_box: quantityForForm || undefined
     })
@@ -320,6 +332,8 @@ export default function ComponentManager() {
                   vendor: '',
                   notes: '',
                   caliber_id: undefined,
+                  bullet_type: '',
+                  bullet_grain: 0,
                   box_price: undefined,
                   quantity_per_box: undefined
                 })
@@ -564,6 +578,53 @@ export default function ComponentManager() {
                       </p>
                     )}
                   </div>
+                )}
+
+                {/* Bullet-specific fields */}
+                {formData.type === 'bullet' && (
+                  <>
+                    <div>
+                      <label htmlFor="bullet_type" className="block text-sm font-medium text-gray-700">
+                        Bullet Type
+                      </label>
+                      <select
+                        id="bullet_type"
+                        value={formData.bullet_type}
+                        onChange={(e) => setFormData({ ...formData, bullet_type: e.target.value })}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        required
+                      >
+                        <option value="">Select bullet type...</option>
+                        <option value="FMJ">FMJ (Full Metal Jacket)</option>
+                        <option value="Hollow Point">Hollow Point</option>
+                        <option value="Soft Point">Soft Point</option>
+                        <option value="Match">Match</option>
+                        <option value="Boat Tail">Boat Tail</option>
+                        <option value="Boat Tail Hollow Point">Boat Tail Hollow Point</option>
+                        <option value="Lead Round Nose">Lead Round Nose</option>
+                        <option value="Lead Wadcutter">Lead Wadcutter</option>
+                        <option value="Semi-Wadcutter">Semi-Wadcutter</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label htmlFor="bullet_grain" className="block text-sm font-medium text-gray-700">
+                        Bullet Weight (grains)
+                      </label>
+                      <input
+                        type="number"
+                        id="bullet_grain"
+                        min="1"
+                        max="1000"
+                        value={formData.bullet_grain || ''}
+                        onChange={(e) => setFormData({ ...formData, bullet_grain: parseInt(e.target.value) || 0 })}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        placeholder="e.g., 55, 115, 168, 180"
+                        required
+                      />
+                    </div>
+                  </>
                 )}
 
                 <div>
@@ -818,6 +879,20 @@ export default function ComponentManager() {
                         </div>
                       )}
                       
+                      {component.type === 'bullet' && component.bullet_type && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Bullet Type:</span>
+                          <span className="text-gray-900">{component.bullet_type}</span>
+                        </div>
+                      )}
+                      
+                      {component.type === 'bullet' && component.bullet_grain && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Weight:</span>
+                          <span className="text-gray-900">{component.bullet_grain} grains</span>
+                        </div>
+                      )}
+                      
                       <div className="flex justify-between">
                         <span className="text-gray-500">Cost:</span>
                         <div className="text-right">
@@ -909,6 +984,11 @@ export default function ComponentManager() {
                               {getCaliberName(component.caliber_id) && (
                                 <div className="text-xs text-gray-500">
                                   {getCaliberName(component.caliber_id)}
+                                </div>
+                              )}
+                              {component.type === 'bullet' && component.bullet_type && (
+                                <div className="text-xs text-gray-500">
+                                  {component.bullet_type} • {component.bullet_grain}gr
                                 </div>
                               )}
                             </div>
