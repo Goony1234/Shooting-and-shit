@@ -855,6 +855,11 @@ export default function ComponentManager() {
                         </div>
                       </div>
                       
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Created:</span>
+                        <span className="text-gray-900 text-xs">{new Date(component.created_at).toLocaleDateString()}</span>
+                      </div>
+                      
                       {component.notes && (
                         <div className="pt-2 border-t border-gray-200">
                           <span className="text-gray-500 text-xs">Notes:</span>
@@ -891,6 +896,9 @@ export default function ComponentManager() {
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Notes
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Created
                       </th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actions
@@ -952,6 +960,9 @@ export default function ComponentManager() {
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                           {component.notes || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(component.created_at).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           {isOwnComponent(component) ? (

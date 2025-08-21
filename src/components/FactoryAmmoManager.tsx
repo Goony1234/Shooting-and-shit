@@ -700,6 +700,11 @@ export default function FactoryAmmoManager() {
                             )}
                           </div>
                         </div>
+                        
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Created:</span>
+                          <span className="text-gray-900 text-xs">{new Date(ammo.created_at).toLocaleDateString()}</span>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -724,6 +729,9 @@ export default function FactoryAmmoManager() {
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Created By
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Created
                         </th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Actions
@@ -766,6 +774,9 @@ export default function FactoryAmmoManager() {
                                 <span className="text-gray-400">System</span>
                               )}
                             </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {new Date(ammo.created_at).toLocaleDateString()}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             {isOwnAmmo(ammo) ? (
