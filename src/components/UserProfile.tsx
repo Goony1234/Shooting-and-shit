@@ -9,8 +9,17 @@ export default function UserProfile() {
   if (!user) return null
 
   const handleSignOut = async () => {
-    await signOut()
-    setIsOpen(false)
+    if (confirm('Are you sure you want to sign out?')) {
+      try {
+        await signOut()
+        setIsOpen(false)
+      } catch (error) {
+        console.error('Sign out error:', error)
+        setIsOpen(false)
+        // Force refresh if sign out fails
+        window.location.reload()
+      }
+    }
   }
 
   return (

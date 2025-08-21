@@ -209,7 +209,85 @@ export default function SavedLoads() {
           </p>
         </div>
       ) : (
-        <div className="bg-white shadow rounded-lg overflow-hidden">
+        {/* Mobile card layout */}
+        <div className="block md:hidden space-y-4">
+          {savedLoads.map((load) => (
+            <div key={load.id} className="bg-white shadow rounded-lg p-4 border border-gray-200">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1">
+                  <h4 className="text-lg font-medium text-gray-900">{load.name}</h4>
+                  <div className="text-sm text-gray-500 mt-1">{load.caliber}</div>
+                  {load.notes && (
+                    <div className="text-sm text-gray-600 mt-1 italic">"{load.notes}"</div>
+                  )}
+                </div>
+                <div className="flex items-center space-x-2 ml-4">
+                  <button
+                    onClick={() => setSelectedLoad(load)}
+                    className="text-blue-600 hover:text-blue-900"
+                    title="View details"
+                  >
+                    <Eye className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={() => handleDuplicate(load)}
+                    className="text-green-600 hover:text-green-900"
+                    title="Duplicate load"
+                  >
+                    <Copy className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(load)}
+                    className="text-red-600 hover:text-red-900"
+                    title="Delete"
+                  >
+                    <Trash2 className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 mb-3">
+                <div className="text-center bg-blue-50 rounded-lg p-3">
+                  <div className="text-xs text-blue-600">Cost per Round</div>
+                  <div className="text-lg font-bold text-blue-900">
+                    ${load.cost_per_round.toFixed(4)}
+                  </div>
+                </div>
+                <div className="text-center bg-gray-50 rounded-lg p-3">
+                  <div className="text-xs text-gray-600">Created</div>
+                  <div className="text-sm font-medium text-gray-900">
+                    {new Date(load.created_at).toLocaleDateString()}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="border-t border-gray-200 pt-3">
+                <div className="text-xs text-gray-500 mb-2">Components:</div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="font-medium text-gray-700">Brass:</span>
+                    <div className="text-gray-600">{getComponentName(load.brass_id)}</div>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Bullet:</span>
+                    <div className="text-gray-600">{getComponentName(load.bullet_id)}</div>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Powder:</span>
+                    <div className="text-gray-600">{getComponentName(load.powder_id)} ({load.powder_weight}gr)</div>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Primer:</span>
+                    <div className="text-gray-600">{getComponentName(load.primer_id)}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop table layout */}
+        <div className="hidden md:block bg-white shadow rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">

@@ -545,7 +545,108 @@ export default function ComponentManager() {
               <h3 className="text-lg font-medium text-gray-900 mb-4 capitalize">
                 {type} ({typeComponents.length})
               </h3>
-              <div className="overflow-x-auto">
+              {/* Mobile-friendly card layout */}
+              <div className="block md:hidden space-y-3">
+                {typeComponents.map((component) => (
+                  <div key={component.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(component.type)}`}>
+                          {component.type}
+                        </span>
+                        <h4 className="ml-2 text-sm font-medium text-gray-900">
+                          {component.name}
+                        </h4>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {isOwnComponent(component) ? (
+                          <>
+                            <button
+                              onClick={() => handleEdit(component)}
+                              className="text-blue-600 hover:text-blue-900"
+                              title="Edit"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(component)}
+                              className="text-red-600 hover:text-red-900"
+                              title="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-gray-400 text-xs">View only</span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2 text-sm">
+                      {component.manufacturer && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Manufacturer:</span>
+                          <span className="text-gray-900">{component.manufacturer}</span>
+                        </div>
+                      )}
+                      
+                      {getCaliberName(component.caliber_id) && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Caliber:</span>
+                          <span className="text-gray-900">{getCaliberName(component.caliber_id)}</span>
+                        </div>
+                      )}
+                      
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Cost:</span>
+                        <div className="text-right">
+                          <div className="text-gray-900 font-medium">
+                            ${component.cost_per_unit.toFixed(component.type === 'powder' ? 6 : 4)} / {component.unit}
+                          </div>
+                          {component.box_price && component.quantity_per_box && (
+                            <div className="text-xs text-gray-500">
+                              {component.type === 'powder' ? (
+                                <>Bottle: ${component.box_price.toFixed(2)} / {(component.quantity_per_box / 7000).toFixed(1)} lbs</>
+                              ) : (
+                                <>Box: ${component.box_price.toFixed(2)} / {component.quantity_per_box} units</>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Created by:</span>
+                        <div className="flex items-center">
+                          {isOwnComponent(component) ? (
+                            <>
+                              <User className="h-3 w-3 text-blue-600 mr-1" />
+                              <span className="text-blue-600 font-medium text-xs">You</span>
+                            </>
+                          ) : component.created_by ? (
+                            <>
+                              <User className="h-3 w-3 text-gray-400 mr-1" />
+                              <span className="text-xs">Community</span>
+                            </>
+                          ) : (
+                            <span className="text-gray-400 text-xs">System</span>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {component.notes && (
+                        <div className="pt-2 border-t border-gray-200">
+                          <span className="text-gray-500 text-xs">Notes:</span>
+                          <p className="text-gray-900 text-xs mt-1">{component.notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop table layout */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>

@@ -120,7 +120,13 @@ function SidebarContent({ getNavigationForSection, isActiveLink }: SidebarConten
 
   const handleSignOut = async () => {
     if (confirm('Are you sure you want to sign out?')) {
-      await signOut()
+      try {
+        await signOut()
+      } catch (error) {
+        console.error('Sign out error:', error)
+        // Force refresh if sign out fails
+        window.location.reload()
+      }
     }
   }
 

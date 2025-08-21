@@ -231,7 +231,7 @@ export default function CostComparison() {
       </div>
 
       {/* Selection Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8">
         {/* First Item Selection */}
         <div className="bg-white shadow rounded-lg p-6">
           <div className="flex items-center mb-4">
@@ -243,7 +243,7 @@ export default function CostComparison() {
           
           {/* Type Selection for First Item */}
           <div className="mb-4">
-            <div className="flex space-x-4">
+            <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-2 sm:space-y-0">
               <label className="flex items-center">
                 <input
                   type="radio"
@@ -303,7 +303,7 @@ export default function CostComparison() {
             <>
               {/* Type Selection for Second Item */}
               <div className="mb-4">
-                <div className="flex space-x-4">
+                <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-2 sm:space-y-0">
                   <label className="flex items-center">
                     <input
                       type="radio"
@@ -355,7 +355,7 @@ export default function CostComparison() {
         <div className="bg-white shadow rounded-lg p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-6 text-center">Comparison Results</h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
             {/* First Item */}
             <div className="text-center p-4 bg-blue-50 rounded-lg">
               {firstType === 'load' ? (
@@ -426,7 +426,7 @@ export default function CostComparison() {
           {/* Cost Per Volume Calculations */}
           <div className="mt-6 pt-6 border-t border-gray-200">
             <h4 className="text-md font-medium text-gray-900 mb-4 text-center">Cost for Different Quantities</h4>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-center">
               {[20, 50, 100, 1000].map(quantity => {
                 const firstTotal = firstItem.cost_per_round * quantity
                 const secondTotal = secondItem.cost_per_round * quantity
@@ -460,7 +460,7 @@ export default function CostComparison() {
           </p>
           
           {/* Comparison Examples */}
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto">
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
             <div className="bg-blue-50 rounded-lg p-4">
               <div className="flex items-center justify-center mb-2">
                 <Database className="h-5 w-5 text-blue-600 mr-1" />

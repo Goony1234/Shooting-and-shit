@@ -407,7 +407,87 @@ export default function FactoryAmmoManager() {
                 <h3 className="text-lg font-medium text-gray-900 mb-4">
                   {caliber} ({caliberAmmo.length} products)
                 </h3>
-                <div className="overflow-x-auto">
+                {/* Mobile card layout */}
+                <div className="block md:hidden space-y-3">
+                  {caliberAmmo.map((ammo) => (
+                    <div key={ammo.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h4 className="text-sm font-medium text-gray-900">
+                            {ammo.manufacturer}
+                          </h4>
+                          <div className="text-sm text-gray-600">{ammo.name}</div>
+                        </div>
+                        <div className="flex items-center space-x-2 ml-4">
+                          {isOwnAmmo(ammo) ? (
+                            <>
+                              <button
+                                onClick={() => handleEdit(ammo)}
+                                className="text-blue-600 hover:text-blue-900"
+                                title="Edit"
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(ammo)}
+                                className="text-red-600 hover:text-red-900"
+                                title="Delete"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </>
+                          ) : (
+                            <span className="text-gray-400 text-xs">View only</span>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 mb-3">
+                        <div className="text-center bg-blue-50 rounded-lg p-3">
+                          <div className="text-xs text-blue-600">Cost per Round</div>
+                          <div className="text-lg font-bold text-blue-900">
+                            ${ammo.cost_per_round.toFixed(4)}
+                          </div>
+                        </div>
+                        <div className="text-center bg-gray-50 rounded-lg p-3">
+                          <div className="text-xs text-gray-600">Bullet Weight</div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {ammo.bullet_weight} gr
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Box Price:</span>
+                          <span className="text-gray-900">${ammo.cost_per_box.toFixed(2)} / {ammo.rounds_per_box} rounds</span>
+                        </div>
+                        
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Created by:</span>
+                          <div className="flex items-center">
+                            {isOwnAmmo(ammo) ? (
+                              <>
+                                <User className="h-3 w-3 text-blue-600 mr-1" />
+                                <span className="text-blue-600 font-medium text-xs">You</span>
+                              </>
+                            ) : ammo.created_by ? (
+                              <>
+                                <User className="h-3 w-3 text-gray-400 mr-1" />
+                                <span className="text-xs">Community</span>
+                              </>
+                            ) : (
+                              <span className="text-gray-400 text-xs">System</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop table layout */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>

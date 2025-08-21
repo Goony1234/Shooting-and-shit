@@ -13,7 +13,7 @@ export default function AuthPage() {
           <Calculator className="h-12 w-12 text-blue-600" />
         </div>
         <h1 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Reloading Calculator
+          SHOOTING & SHIT
         </h1>
         <p className="mt-2 text-center text-sm text-gray-600">
           Compare reloading costs to factory ammunition
