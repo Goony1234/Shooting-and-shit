@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Edit2, Trash2, Target, User } from 'lucide-react'
+import { Plus, Edit2, Trash2, Target, User, Search, Filter, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import type { FactoryAmmo, Caliber } from '../types/index'
@@ -30,6 +30,12 @@ export default function FactoryAmmoManager() {
     rounds_per_box: 20
   })
   const [loading, setLoading] = useState(false)
+  
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterCaliberId, setFilterCaliberId] = useState('')
+  const [filterCreatedBy, setFilterCreatedBy] = useState<'all' | 'me' | 'community'>('all')
+  const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
     fetchFactoryAmmo()
@@ -191,7 +197,43 @@ export default function FactoryAmmoManager() {
     return ammo.created_by === user?.id
   }
 
-  const groupedAmmo = factoryAmmo.reduce((acc, ammo) => {
+  const getCaliberName = (caliberId?: string) => {
+    if (!caliberId) return null
+    const caliber = calibers.find(c => c.id === caliberId)
+    return caliber ? caliber.display_name : null
+  }
+
+  const getFilteredAmmo = () => {
+    return factoryAmmo.filter(ammo => {
+      // Search filter
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase()
+        const matchesSearch = 
+          ammo.name.toLowerCase().includes(searchLower) ||
+          ammo.manufacturer.toLowerCase().includes(searchLower) ||
+          ammo.caliber.toLowerCase().includes(searchLower)
+        
+        if (!matchesSearch) return false
+      }
+
+      // Caliber filter
+      if (filterCaliberId && ammo.caliber_id !== filterCaliberId) {
+        return false
+      }
+
+      // Created by filter
+      if (filterCreatedBy === 'me' && !isOwnAmmo(ammo)) {
+        return false
+      }
+      if (filterCreatedBy === 'community' && (isOwnAmmo(ammo) || !ammo.created_by)) {
+        return false
+      }
+
+      return true
+    })
+  }
+
+  const groupedAmmo = getFilteredAmmo().reduce((acc, ammo) => {
     if (!acc[ammo.caliber]) {
       acc[ammo.caliber] = []
     }
@@ -199,15 +241,40 @@ export default function FactoryAmmoManager() {
     return acc
   }, {} as Record<string, FactoryAmmo[]>)
 
+  const clearFilters = () => {
+    setSearchTerm('')
+    setFilterCaliberId('')
+    setFilterCreatedBy('all')
+  }
+
+  const hasActiveFilters = searchTerm || filterCaliberId || filterCreatedBy !== 'all'
+
   return (
     <div className="h-full px-4 sm:px-6 lg:px-8 overflow-y-auto">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-4 sm:space-y-0">
         <div className="flex items-center">
           <Target className="h-6 w-6 text-blue-600 mr-2" />
           <h2 className="text-2xl font-bold text-gray-900">Factory Ammunition</h2>
-          <span className="ml-2 text-sm text-gray-500">({factoryAmmo.length} products)</span>
+          <span className="ml-2 text-sm text-gray-500">({getFilteredAmmo().length} products)</span>
         </div>
-        <button
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+              hasActiveFilters 
+                ? 'text-blue-700 bg-blue-50 border-blue-300' 
+                : 'text-gray-700 bg-white hover:bg-gray-50'
+            }`}
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            Filters
+            {hasActiveFilters && (
+              <span className="ml-2 bg-blue-600 text-white text-xs rounded-full px-2 py-0.5">
+                {[searchTerm, filterCaliberId, filterCreatedBy !== 'all'].filter(Boolean).length}
+              </span>
+            )}
+          </button>
+          <button
           onClick={() => {
             setShowForm(true)
             setEditingAmmo(null)
@@ -227,6 +294,134 @@ export default function FactoryAmmoManager() {
           Add Factory Ammo
         </button>
       </div>
+
+      {/* Filter Panel */}
+      {showFilters && (
+        <div className="bg-white shadow rounded-lg mb-6">
+          <div className="px-4 py-5 sm:p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Filter Factory Ammunition</h3>
+              {hasActiveFilters && (
+                <button
+                  onClick={clearFilters}
+                  className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50"
+                >
+                  <X className="h-3 w-3 mr-1" />
+                  Clear All
+                </button>
+              )}
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Search */}
+              <div>
+                <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
+                  Search
+                </label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
+                    id="search"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    placeholder="Search by name, manufacturer, or caliber..."
+                  />
+                </div>
+              </div>
+
+              {/* Caliber Filter */}
+              <div>
+                <label htmlFor="caliber-filter" className="block text-sm font-medium text-gray-700 mb-1">
+                  Caliber
+                </label>
+                <select
+                  id="caliber-filter"
+                  value={filterCaliberId}
+                  onChange={(e) => setFilterCaliberId(e.target.value)}
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                >
+                  <option value="">All Calibers</option>
+                  {['rifle', 'pistol', 'magnum'].map(category => {
+                    const categoryCalibers = calibers.filter(c => c.category === category)
+                    if (categoryCalibers.length === 0) return null
+                    
+                    return (
+                      <optgroup key={category} label={category.charAt(0).toUpperCase() + category.slice(1)}>
+                        {categoryCalibers.map(caliber => (
+                          <option key={caliber.id} value={caliber.id}>
+                            {caliber.display_name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )
+                  })}
+                </select>
+              </div>
+
+              {/* Created By Filter */}
+              <div>
+                <label htmlFor="created-by-filter" className="block text-sm font-medium text-gray-700 mb-1">
+                  Created By
+                </label>
+                <select
+                  id="created-by-filter"
+                  value={filterCreatedBy}
+                  onChange={(e) => setFilterCreatedBy(e.target.value as 'all' | 'me' | 'community')}
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                >
+                  <option value="all">All Ammunition</option>
+                  <option value="me">My Entries</option>
+                  <option value="community">Community Entries</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Active Filters Display */}
+            {hasActiveFilters && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm text-gray-500">Active filters:</span>
+                  {searchTerm && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      Search: "{searchTerm}"
+                      <button
+                        onClick={() => setSearchTerm('')}
+                        className="ml-1 text-blue-600 hover:text-blue-800"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  )}
+                  {filterCaliberId && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      Caliber: {getCaliberName(filterCaliberId)}
+                      <button
+                        onClick={() => setFilterCaliberId('')}
+                        className="ml-1 text-green-600 hover:text-green-800"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  )}
+                  {filterCreatedBy !== 'all' && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                      {filterCreatedBy === 'me' ? 'My Entries' : 'Community'}
+                      <button
+                        onClick={() => setFilterCreatedBy('all')}
+                        className="ml-1 text-purple-600 hover:text-purple-800"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <div className="bg-white shadow rounded-lg mb-6">
@@ -400,8 +595,9 @@ export default function FactoryAmmoManager() {
           </p>
         </div>
       ) : (
-        <div className="space-y-6">
-          {Object.entries(groupedAmmo).map(([caliber, caliberAmmo]) => (
+        <>
+          <div className="space-y-6">
+            {Object.entries(groupedAmmo).map(([caliber, caliberAmmo]) => (
             <div key={caliber} className="bg-white shadow rounded-lg">
               <div className="px-4 py-5 sm:p-6">
                 <h3 className="text-lg font-medium text-gray-900 mb-4">
@@ -578,8 +774,10 @@ export default function FactoryAmmoManager() {
               </div>
             </div>
           ))}
-        </div>
+          </div>
+        </>
       )}
+    </div>
     </div>
   )
 }
