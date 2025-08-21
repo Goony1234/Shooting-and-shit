@@ -276,63 +276,65 @@ export default function ComponentManager() {
   const hasActiveFilters = searchTerm || filterCaliberId || filterCreatedBy !== 'all'
 
   return (
-    <div className="h-full px-4 sm:px-6 lg:px-8 overflow-y-auto">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-4 sm:space-y-0">
-        <div className="flex items-center">
-          <Package className="h-6 w-6 text-blue-600 mr-2" />
-          <h2 className="text-2xl font-bold text-gray-900">Component Manager</h2>
+    <div className="h-full overflow-y-auto">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-4 sm:space-y-0">
+          <div className="flex items-center">
+            <Package className="h-6 w-6 text-blue-600 mr-2" />
+            <h2 className="text-2xl font-bold text-gray-900">Component Manager</h2>
+          </div>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-full sm:w-auto justify-center ${
+                hasActiveFilters 
+                  ? 'text-blue-700 bg-blue-50 border-blue-300' 
+                  : 'text-gray-700 bg-white hover:bg-gray-50'
+              }`}
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              Filters
+              {hasActiveFilters && (
+                <span className="ml-2 bg-blue-600 text-white text-xs rounded-full px-2 py-0.5">
+                  {[searchTerm, filterCaliberId, filterCreatedBy !== 'all'].filter(Boolean).length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => {
+                setShowForm(true)
+                setEditingComponent(null)
+                setFormData({
+                  name: '',
+                  type: 'brass',
+                  cost_per_unit: 0,
+                  unit: '',
+                  manufacturer: '',
+                  notes: '',
+                  caliber_id: undefined,
+                  box_price: undefined,
+                  quantity_per_box: undefined
+                })
+                setUseBulkPricing(false)
+              }}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-full sm:w-auto justify-center"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Component
+            </button>
         </div>
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-              hasActiveFilters 
-                ? 'text-blue-700 bg-blue-50 border-blue-300' 
-                : 'text-gray-700 bg-white hover:bg-gray-50'
-            }`}
-          >
-            <Filter className="h-4 w-4 mr-2" />
-            Filters
-            {hasActiveFilters && (
-              <span className="ml-2 bg-blue-600 text-white text-xs rounded-full px-2 py-0.5">
-                {[searchTerm, filterCaliberId, filterCreatedBy !== 'all'].filter(Boolean).length}
-              </span>
-            )}
-          </button>
-          <button
-          onClick={() => {
-            setShowForm(true)
-            setEditingComponent(null)
-            setFormData({
-              name: '',
-              type: 'brass',
-              cost_per_unit: 0,
-              unit: '',
-              manufacturer: '',
-              notes: '',
-              caliber_id: undefined,
-              box_price: undefined,
-              quantity_per_box: undefined
-            })
-            setUseBulkPricing(false)
-          }}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Component
-        </button>
       </div>
 
       {/* Filter Panel */}
       {showFilters && (
-        <div className="bg-white shadow rounded-lg mb-6 z-10">
+        <div className="bg-white shadow rounded-lg mb-6">
           <div className="px-4 py-5 sm:p-6">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-2 sm:space-y-0">
               <h3 className="text-lg font-medium text-gray-900">Filter Components</h3>
               {hasActiveFilters && (
                 <button
                   onClick={clearFilters}
-                  className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50"
+                  className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50 self-start sm:self-auto"
                 >
                   <X className="h-3 w-3 mr-1" />
                   Clear All
@@ -340,9 +342,9 @@ export default function ComponentManager() {
               )}
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Search */}
-              <div>
+              <div className="sm:col-span-2 lg:col-span-1">
                 <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
                   Search
                 </label>
@@ -945,8 +947,8 @@ export default function ComponentManager() {
             </div>
           </div>
         ))}
+        </div>
       </div>
-    </div>
     </div>
   )
 }
