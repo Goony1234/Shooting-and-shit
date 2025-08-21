@@ -209,8 +209,9 @@ export default function SavedLoads() {
           </p>
         </div>
       ) : (
-        {/* Mobile card layout */}
-        <div className="block md:hidden space-y-4">
+        <>
+          {/* Mobile card layout */}
+          <div className="block md:hidden space-y-4">
           {savedLoads.map((load) => (
             <div key={load.id} className="bg-white shadow rounded-lg p-4 border border-gray-200">
               <div className="flex items-start justify-between mb-3">
@@ -379,6 +380,7 @@ export default function SavedLoads() {
             </table>
           </div>
         </div>
+        </>
       )}
 
       {selectedLoad && (
