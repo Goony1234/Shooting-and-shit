@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Database, Trash2, Eye, Copy, Plus, Save } from 'lucide-react'
+import { Database, Trash2, Eye, Copy, Plus, Save, Clock } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import { useRateLimit, RATE_LIMITS } from '../hooks/useRateLimit'
 import type { SavedLoad, Component, LoadCalculation, Caliber } from '../types/index'
 
 interface LoadFormData {
@@ -20,6 +21,7 @@ interface LoadFormData {
 
 export default function SavedLoads() {
   const { user } = useAuth()
+  const rateLimit = useRateLimit(RATE_LIMITS.LOAD_CREATE)
   const [savedLoads, setSavedLoads] = useState<SavedLoad[]>([])
   const [components, setComponents] = useState<Component[]>([])
   const [calibers, setCalibers] = useState<Caliber[]>([])
@@ -47,6 +49,13 @@ export default function SavedLoads() {
     Promise.all([fetchSavedLoads(), fetchComponents(), fetchCalibers()])
     loadDuplicateData()
   }, [])
+
+  useEffect(() => {
+    // Update rate limit status when component mounts
+    if (user) {
+      rateLimit.updateRemainingActions()
+    }
+  }, [user, rateLimit])
 
   useEffect(() => {
     if (showLoadBuilder) {
@@ -231,6 +240,20 @@ export default function SavedLoads() {
       }
       // Update the form data with the validated value
       setFormData({ ...formData, brass_reuse_count: reuseCount })
+    }
+
+    // Check rate limit
+    const canCreate = await rateLimit.checkAndLogAction({
+      load_name: formData.name,
+      caliber: formData.caliber,
+      powder_weight: formData.powder_weight
+    })
+
+    if (!canCreate) {
+      const resetTime = rateLimit.resetTime
+      const resetTimeStr = resetTime ? new Date(resetTime).toLocaleTimeString() : 'soon'
+      alert(`Rate limit exceeded. You can create ${rateLimit.remainingActions || 0} more loads. Limit resets at ${resetTimeStr}.`)
+      return
     }
 
     setSaveLoading(true)
@@ -442,7 +465,17 @@ export default function SavedLoads() {
           <div className="flex items-center">
             <Database className="h-6 w-6 text-blue-600 mr-2" />
             <h2 className="text-2xl font-bold text-gray-900">Saved Loads</h2>
-            <span className="ml-2 text-sm text-gray-500">({savedLoads.length} loads)</span>
+            <div className="ml-2 text-sm text-gray-500 flex items-center space-x-3">
+              <span>({savedLoads.length} loads)</span>
+              {user && rateLimit.remainingActions !== null && (
+                <div className="flex items-center">
+                  <Clock className="h-3 w-3 mr-1" />
+                  <span className={`${rateLimit.remainingActions <= 2 ? 'text-red-500' : 'text-gray-500'}`}>
+                    {rateLimit.remainingActions}/20 creates left
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
           <button
             onClick={() => setShowLoadBuilder(true)}

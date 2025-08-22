@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Plus, Edit2, Trash2, Package, User, Search, Filter, X, ChevronDown, ChevronRight } from 'lucide-react'
+import { Plus, Edit2, Trash2, Package, User, Search, Filter, X, ChevronDown, ChevronRight, Clock } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import { useRateLimit, RATE_LIMITS } from '../hooks/useRateLimit'
 import type { Component, Caliber } from '../types/index'
 
 interface ComponentFormData {
@@ -22,6 +23,7 @@ interface ComponentFormData {
 
 export default function ComponentManager() {
   const { user } = useAuth()
+  const rateLimit = useRateLimit(RATE_LIMITS.COMPONENT_CREATE)
   const [components, setComponents] = useState<Component[]>([])
   const [calibers, setCalibers] = useState<Caliber[]>([])
   const [showForm, setShowForm] = useState(false)
@@ -57,6 +59,13 @@ export default function ComponentManager() {
     fetchCalibers()
   }, [])
 
+  useEffect(() => {
+    // Update rate limit status when component mounts
+    if (user) {
+      rateLimit.updateRemainingActions()
+    }
+  }, [user, rateLimit])
+
   const fetchComponents = async () => {
     try {
       const { data, error } = await supabase
@@ -91,11 +100,28 @@ export default function ComponentManager() {
     e.preventDefault()
     setLoading(true)
 
-    // Check component limit for new components
+    // Check rate limit for new components
     if (!editingComponent && user) {
       const userComponents = components.filter(c => c.created_by === user.id)
+      
+      // Check component limit
       if (userComponents.length >= 200) {
         alert('You have reached the maximum limit of 200 components. Please delete some components before adding new ones.')
+        setLoading(false)
+        return
+      }
+
+      // Check rate limit
+      const canCreate = await rateLimit.checkAndLogAction({
+        component_type: formData.type,
+        component_name: formData.name,
+        manufacturer: formData.manufacturer
+      })
+
+      if (!canCreate) {
+        const resetTime = rateLimit.resetTime
+        const resetTimeStr = resetTime ? new Date(resetTime).toLocaleTimeString() : 'soon'
+        alert(`Rate limit exceeded. You can create ${rateLimit.remainingActions || 0} more components. Limit resets at ${resetTimeStr}.`)
         setLoading(false)
         return
       }
@@ -322,9 +348,19 @@ export default function ComponentManager() {
             <Package className="h-6 w-6 text-blue-600 mr-2" />
             <h2 className="text-2xl font-bold text-gray-900">Component Manager</h2>
             {user && (
-              <span className="ml-3 text-sm text-gray-500">
-                ({components.filter(c => c.created_by === user.id).length}/200 components)
-              </span>
+              <div className="ml-3 text-sm text-gray-500 flex items-center space-x-3">
+                <span>
+                  ({components.filter(c => c.created_by === user.id).length}/200 components)
+                </span>
+                {rateLimit.remainingActions !== null && (
+                  <div className="flex items-center">
+                    <Clock className="h-3 w-3 mr-1" />
+                    <span className={`${rateLimit.remainingActions <= 2 ? 'text-red-500' : 'text-gray-500'}`}>
+                      {rateLimit.remainingActions}/10 creates left
+                    </span>
+                  </div>
+                )}
+              </div>
             )}
           </div>
           <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
