@@ -470,7 +470,10 @@ export default function SavedLoads() {
               {user && rateLimit.remainingActions !== null && (
                 <div className="flex items-center">
                   <Clock className="h-3 w-3 mr-1" />
-                  <span className={`${rateLimit.remainingActions <= 2 ? 'text-red-500' : 'text-gray-500'}`}>
+                  <span 
+                    className={`${rateLimit.remainingActions <= 2 ? 'text-red-500' : 'text-gray-500'} cursor-help`}
+                    title={`Rate limiting: You can create up to 20 saved loads per hour to prevent spam and abuse. This limit resets every hour. ${rateLimit.resetTime ? `Next reset: ${new Date(rateLimit.resetTime).toLocaleTimeString()}` : ''}`}
+                  >
                     {rateLimit.remainingActions}/20 creates left
                   </span>
                 </div>
