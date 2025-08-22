@@ -21,8 +21,6 @@ export default defineConfig({
   },
   // Development server configuration
   server: {
-    // Ensure SPA routing works in development
-    historyApiFallback: true,
     port: 3000,
     open: true
   }
