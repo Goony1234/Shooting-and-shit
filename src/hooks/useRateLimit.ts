@@ -27,6 +27,53 @@ export const useRateLimit = (config: RateLimitConfig) => {
   // Add debouncing to prevent rapid successive API calls
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
+  // Get remaining actions for this user with debouncing
+  const updateRemainingActions = useCallback(async (immediate: boolean = false) => {
+    if (!user) return
+
+    // Clear any existing timeout
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current)
+      updateTimeoutRef.current = null
+    }
+
+    const doUpdate = async () => {
+      try {
+        // Use the optimized combined function to reduce API calls from 2 to 1
+        const { data, error } = await supabase.rpc('get_rate_limit_status', {
+          p_user_id: user.id,
+          p_action_type: config.actionType,
+          p_max_actions: config.maxActions,
+          p_time_window: `${config.timeWindow / 1000} seconds`
+        })
+
+        if (error) {
+          console.error('Error getting rate limit status:', error)
+          return
+        }
+
+        const status = data?.[0]
+        if (status) {
+          setState(prev => ({
+            ...prev,
+            remainingActions: status.remaining_actions,
+            resetTime: status.reset_time ? new Date(status.reset_time) : null
+          }))
+        }
+
+      } catch (error) {
+        console.error('Error updating remaining actions:', error)
+      }
+    }
+
+    if (immediate) {
+      await doUpdate()
+    } else {
+      // Debounce updates to prevent excessive API calls
+      updateTimeoutRef.current = setTimeout(doUpdate, 500)
+    }
+  }, [user, config])
+
   // Check if action is allowed and log it
   const checkAndLogAction = useCallback(async (metadata: Record<string, any> = {}) => {
     if (!user) {
@@ -77,53 +124,6 @@ export const useRateLimit = (config: RateLimitConfig) => {
       return false
     }
   }, [user, config, updateRemainingActions])
-
-  // Get remaining actions for this user with debouncing
-  const updateRemainingActions = useCallback(async (immediate: boolean = false) => {
-    if (!user) return
-
-    // Clear any existing timeout
-    if (updateTimeoutRef.current) {
-      clearTimeout(updateTimeoutRef.current)
-      updateTimeoutRef.current = null
-    }
-
-    const doUpdate = async () => {
-      try {
-        // Use the optimized combined function to reduce API calls from 2 to 1
-        const { data, error } = await supabase.rpc('get_rate_limit_status', {
-          p_user_id: user.id,
-          p_action_type: config.actionType,
-          p_max_actions: config.maxActions,
-          p_time_window: `${config.timeWindow / 1000} seconds`
-        })
-
-        if (error) {
-          console.error('Error getting rate limit status:', error)
-          return
-        }
-
-        const status = data?.[0]
-        if (status) {
-          setState(prev => ({
-            ...prev,
-            remainingActions: status.remaining_actions,
-            resetTime: status.reset_time ? new Date(status.reset_time) : null
-          }))
-        }
-
-      } catch (error) {
-        console.error('Error updating remaining actions:', error)
-      }
-    }
-
-    if (immediate) {
-      await doUpdate()
-    } else {
-      // Debounce updates to prevent excessive API calls
-      updateTimeoutRef.current = setTimeout(doUpdate, 500)
-    }
-  }, [user, config])
 
   // Check current rate limit status without logging an action
   const checkRateLimit = useCallback(async () => {
