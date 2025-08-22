@@ -84,3 +84,118 @@ export interface UserSettings {
   created_at: string
   updated_at: string
 }
+
+// Load Development Types
+export interface Firearm {
+  id: string
+  created_by: string
+  name: string
+  manufacturer?: string
+  model?: string
+  caliber_id?: string
+  caliber: string
+  barrel_length?: number
+  barrel_twist_rate?: string
+  action_type?: string
+  notes?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface LoadDevelopmentSession {
+  id: string
+  created_by: string
+  firearm_id: string
+  name: string
+  description?: string
+  bullet_id?: string
+  powder_id?: string
+  case_id?: string
+  primer_id?: string
+  goal?: string
+  testing_variable?: string
+  status: 'active' | 'completed' | 'paused' | 'archived'
+  created_at: string
+  updated_at: string
+  completed_at?: string
+  
+  // Joined data
+  firearm?: Firearm
+  bullet?: Component
+  powder?: Component
+  case?: Component
+  primer?: Component
+}
+
+export interface LoadTest {
+  id: string
+  session_id: string
+  created_by: string
+  test_number: number
+  test_name?: string
+  
+  // Load specifications
+  powder_charge: number
+  bullet_seating_depth?: number
+  case_overall_length?: number
+  
+  // Performance results
+  shot_count: number
+  average_velocity?: number
+  velocity_std_dev?: number
+  extreme_spread?: number
+  group_size?: number
+  group_size_moa?: number
+  shot_velocities: number[]
+  
+  // Environmental conditions
+  temperature?: number
+  humidity?: number
+  barometric_pressure?: number
+  wind_speed?: number
+  wind_direction?: string
+  
+  // Range conditions
+  distance_yards?: number
+  target_type?: string
+  
+  notes?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface WeatherCondition {
+  id: string
+  session_id?: string
+  load_test_id?: string
+  created_by: string
+  
+  // Location
+  latitude?: number
+  longitude?: number
+  location_name?: string
+  
+  // Weather data
+  temperature: number
+  feels_like?: number
+  humidity: number
+  barometric_pressure: number
+  wind_speed?: number
+  wind_direction?: number
+  wind_direction_text?: string
+  wind_gust?: number
+  visibility?: number
+  uv_index?: number
+  cloud_cover?: number
+  precipitation?: number
+  precipitation_type?: string
+  dew_point?: number
+  weather_description?: string
+  weather_icon?: string
+  
+  // API metadata
+  api_provider?: string
+  api_response?: any
+  weather_timestamp: string
+  created_at: string
+}

@@ -414,22 +414,34 @@ export default function CostComparison() {
                 {firstType === 'load' ? firstItem.name : `${(firstItem as FactoryAmmo).manufacturer} ${firstItem.name}`}
               </div>
               
-              {/* Pre-tax cost */}
-              <div className="mb-2">
-                <div className="text-xs text-blue-600 mb-1">Pre-tax</div>
-                <div className="text-lg font-semibold text-blue-800">
-                  ${comparison.firstPreTax.toFixed(4)}
-                </div>
-              </div>
-              
-              {/* Post-tax cost */}
-              <div className="border-t border-blue-200 pt-2">
-                <div className="text-xs text-blue-600 mb-1">With Tax</div>
-                <div className="text-2xl font-bold text-blue-900">
-                  ${comparison.firstPostTax.toFixed(4)}
-                </div>
-                <div className="text-xs text-blue-600">per round</div>
-              </div>
+              {salesTaxEnabled ? (
+                <>
+                  {/* Pre-tax cost */}
+                  <div className="mb-2">
+                    <div className="text-xs text-blue-600 mb-1">Pre-tax</div>
+                    <div className="text-lg font-semibold text-blue-800">
+                      ${comparison.firstPreTax.toFixed(4)}
+                    </div>
+                  </div>
+                  
+                  {/* Post-tax cost */}
+                  <div className="border-t border-blue-200 pt-2">
+                    <div className="text-xs text-blue-600 mb-1">With Tax</div>
+                    <div className="text-2xl font-bold text-blue-900">
+                      ${comparison.firstPostTax.toFixed(4)}
+                    </div>
+                    <div className="text-xs text-blue-600">per round</div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Single price when tax is disabled */}
+                  <div className="text-2xl font-bold text-blue-900">
+                    ${comparison.firstPreTax.toFixed(4)}
+                  </div>
+                  <div className="text-xs text-blue-600">per round</div>
+                </>
+              )}
             </div>
 
             {/* Comparison Arrow & Savings */}
@@ -450,35 +462,53 @@ export default function CostComparison() {
                 {comparison.isFirstCheaper ? 'First is Cheaper' : 'Second is Cheaper'}
               </div>
               
-              {/* Post-tax savings (main) */}
-              <div className="mb-3">
-                <div className="text-xs text-gray-600 mb-1">With Tax Savings</div>
-                <div className={`text-2xl font-bold ${
-                  comparison.isFirstCheaper ? 'text-green-700' : 'text-red-700'
-                }`}>
-                  ${comparison.savings.toFixed(4)}
-                </div>
-                <div className={`text-sm ${
-                  comparison.isFirstCheaper ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  ({comparison.percentage.toFixed(1)}% difference)
-                </div>
-              </div>
-              
-              {/* Pre-tax savings */}
-              <div className="border-t border-gray-200 pt-2">
-                <div className="text-xs text-gray-600 mb-1">Pre-tax Savings</div>
-                <div className={`text-lg font-semibold ${
-                  comparison.isFirstCheaper ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  ${comparison.preTaxSavings.toFixed(4)}
-                </div>
-                <div className={`text-xs ${
-                  comparison.isFirstCheaper ? 'text-green-500' : 'text-red-500'
-                }`}>
-                  ({comparison.preTaxPercentage.toFixed(1)}%)
-                </div>
-              </div>
+              {salesTaxEnabled ? (
+                <>
+                  {/* Pre-tax savings (smaller, first) */}
+                  <div className="mb-3">
+                    <div className="text-xs text-gray-600 mb-1">Pre-tax Savings</div>
+                    <div className={`text-lg font-semibold ${
+                      comparison.isFirstCheaper ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      ${comparison.preTaxSavings.toFixed(4)}
+                    </div>
+                    <div className={`text-xs ${
+                      comparison.isFirstCheaper ? 'text-green-500' : 'text-red-500'
+                    }`}>
+                      ({comparison.preTaxPercentage.toFixed(1)}%)
+                    </div>
+                  </div>
+                  
+                  {/* Post-tax savings (larger, main) */}
+                  <div className="border-t border-gray-200 pt-2">
+                    <div className="text-xs text-gray-600 mb-1">With Tax Savings</div>
+                    <div className={`text-2xl font-bold ${
+                      comparison.isFirstCheaper ? 'text-green-700' : 'text-red-700'
+                    }`}>
+                      ${comparison.savings.toFixed(4)}
+                    </div>
+                    <div className={`text-sm ${
+                      comparison.isFirstCheaper ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      ({comparison.percentage.toFixed(1)}% difference)
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Single savings display when tax is disabled */}
+                  <div className={`text-2xl font-bold ${
+                    comparison.isFirstCheaper ? 'text-green-700' : 'text-red-700'
+                  }`}>
+                    ${comparison.preTaxSavings.toFixed(4)}
+                  </div>
+                  <div className={`text-sm ${
+                    comparison.isFirstCheaper ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    ({comparison.preTaxPercentage.toFixed(1)}% difference)
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Second Item */}
@@ -495,22 +525,34 @@ export default function CostComparison() {
                 {secondType === 'load' ? secondItem.name : `${(secondItem as FactoryAmmo).manufacturer} ${secondItem.name}`}
               </div>
               
-              {/* Pre-tax cost */}
-              <div className="mb-2">
-                <div className="text-xs text-green-600 mb-1">Pre-tax</div>
-                <div className="text-lg font-semibold text-green-800">
-                  ${comparison.secondPreTax.toFixed(4)}
-                </div>
-              </div>
-              
-              {/* Post-tax cost */}
-              <div className="border-t border-green-200 pt-2">
-                <div className="text-xs text-green-600 mb-1">With Tax</div>
-                <div className="text-2xl font-bold text-green-900">
-                  ${comparison.secondPostTax.toFixed(4)}
-                </div>
-                <div className="text-xs text-green-600">per round</div>
-              </div>
+              {salesTaxEnabled ? (
+                <>
+                  {/* Pre-tax cost */}
+                  <div className="mb-2">
+                    <div className="text-xs text-green-600 mb-1">Pre-tax</div>
+                    <div className="text-lg font-semibold text-green-800">
+                      ${comparison.secondPreTax.toFixed(4)}
+                    </div>
+                  </div>
+                  
+                  {/* Post-tax cost */}
+                  <div className="border-t border-green-200 pt-2">
+                    <div className="text-xs text-green-600 mb-1">With Tax</div>
+                    <div className="text-2xl font-bold text-green-900">
+                      ${comparison.secondPostTax.toFixed(4)}
+                    </div>
+                    <div className="text-xs text-green-600">per round</div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Single price when tax is disabled */}
+                  <div className="text-2xl font-bold text-green-900">
+                    ${comparison.secondPreTax.toFixed(4)}
+                  </div>
+                  <div className="text-xs text-green-600">per round</div>
+                </>
+              )}
             </div>
           </div>
 
@@ -530,29 +572,44 @@ export default function CostComparison() {
                   <div key={quantity} className="p-3 bg-gray-50 rounded-lg">
                     <div className="text-sm font-medium text-gray-900 mb-3">{quantity} Rounds</div>
                     
-                    {/* Pre-tax totals */}
-                    <div className="mb-2 pb-2 border-b border-gray-300">
-                      <div className="text-xs text-gray-600 mb-1">Pre-tax</div>
-                      <div className="text-xs text-blue-600">First: ${firstPreTaxTotal.toFixed(2)}</div>
-                      <div className="text-xs text-green-600">Second: ${secondPreTaxTotal.toFixed(2)}</div>
-                      <div className={`text-xs font-medium mt-1 ${
-                        preTaxSavings > 0 ? 'text-green-700' : 'text-red-700'
-                      }`}>
-                        Diff: {preTaxSavings > 0 ? '+' : ''}${preTaxSavings.toFixed(2)}
-                      </div>
-                    </div>
-                    
-                    {/* Post-tax totals */}
-                    <div>
-                      <div className="text-xs text-gray-600 mb-1">With Tax</div>
-                      <div className="text-xs text-blue-600 font-medium">First: ${firstPostTaxTotal.toFixed(2)}</div>
-                      <div className="text-xs text-green-600 font-medium">Second: ${secondPostTaxTotal.toFixed(2)}</div>
-                      <div className={`text-xs font-bold mt-1 ${
-                        postTaxSavings > 0 ? 'text-green-700' : 'text-red-700'
-                      }`}>
-                        Diff: {postTaxSavings > 0 ? '+' : ''}${postTaxSavings.toFixed(2)}
-                      </div>
-                    </div>
+                    {salesTaxEnabled ? (
+                      <>
+                        {/* Pre-tax totals */}
+                        <div className="mb-2 pb-2 border-b border-gray-300">
+                          <div className="text-xs text-gray-600 mb-1">Pre-tax</div>
+                          <div className="text-xs text-blue-600">First: ${firstPreTaxTotal.toFixed(2)}</div>
+                          <div className="text-xs text-green-600">Second: ${secondPreTaxTotal.toFixed(2)}</div>
+                          <div className={`text-xs font-medium mt-1 ${
+                            preTaxSavings > 0 ? 'text-green-700' : 'text-red-700'
+                          }`}>
+                            Diff: {preTaxSavings > 0 ? '+' : ''}${preTaxSavings.toFixed(2)}
+                          </div>
+                        </div>
+                        
+                        {/* Post-tax totals */}
+                        <div>
+                          <div className="text-xs text-gray-600 mb-1">With Tax</div>
+                          <div className="text-xs text-blue-600 font-medium">First: ${firstPostTaxTotal.toFixed(2)}</div>
+                          <div className="text-xs text-green-600 font-medium">Second: ${secondPostTaxTotal.toFixed(2)}</div>
+                          <div className={`text-xs font-bold mt-1 ${
+                            postTaxSavings > 0 ? 'text-green-700' : 'text-red-700'
+                          }`}>
+                            Diff: {postTaxSavings > 0 ? '+' : ''}${postTaxSavings.toFixed(2)}
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        {/* Single price display when tax is disabled */}
+                        <div className="text-xs text-blue-600">First: ${firstPreTaxTotal.toFixed(2)}</div>
+                        <div className="text-xs text-green-600">Second: ${secondPreTaxTotal.toFixed(2)}</div>
+                        <div className={`text-xs font-bold mt-1 ${
+                          preTaxSavings > 0 ? 'text-green-700' : 'text-red-700'
+                        }`}>
+                          Diff: {preTaxSavings > 0 ? '+' : ''}${preTaxSavings.toFixed(2)}
+                        </div>
+                      </>
+                    )}
                   </div>
                 )
               })}
