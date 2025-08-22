@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Edit2, Trash2, Package, User, Search, Filter, X } from 'lucide-react'
+import { Plus, Edit2, Trash2, Package, User, Search, Filter, X, ChevronDown, ChevronRight } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import type { Component, Caliber } from '../types/index'
@@ -48,6 +48,9 @@ export default function ComponentManager() {
   const [filterCaliberId, setFilterCaliberId] = useState('')
   const [filterCreatedBy, setFilterCreatedBy] = useState<'all' | 'me' | 'community'>('all')
   const [showFilters, setShowFilters] = useState(false)
+  
+  // Collapsible sections state
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     fetchComponents()
@@ -87,6 +90,16 @@ export default function ComponentManager() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+
+    // Check component limit for new components
+    if (!editingComponent && user) {
+      const userComponents = components.filter(c => c.created_by === user.id)
+      if (userComponents.length >= 200) {
+        alert('You have reached the maximum limit of 200 components. Please delete some components before adding new ones.')
+        setLoading(false)
+        return
+      }
+    }
 
     // Calculate cost per unit from bulk pricing if provided
     let finalCostPerUnit = formData.cost_per_unit
@@ -294,6 +307,13 @@ export default function ComponentManager() {
 
   const hasActiveFilters = searchTerm || filterCaliberId || filterCreatedBy !== 'all'
 
+  const toggleSection = (sectionType: string) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [sectionType]: !prev[sectionType]
+    }))
+  }
+
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -301,6 +321,11 @@ export default function ComponentManager() {
           <div className="flex items-center">
             <Package className="h-6 w-6 text-blue-600 mr-2" />
             <h2 className="text-2xl font-bold text-gray-900">Component Manager</h2>
+            {user && (
+              <span className="ml-3 text-sm text-gray-500">
+                ({components.filter(c => c.created_by === user.id).length}/200 components)
+              </span>
+            )}
           </div>
           <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
             <button
@@ -321,6 +346,13 @@ export default function ComponentManager() {
             </button>
             <button
               onClick={() => {
+                if (user) {
+                  const userComponents = components.filter(c => c.created_by === user.id)
+                  if (userComponents.length >= 200) {
+                    alert('You have reached the maximum limit of 200 components. Please delete some components before adding new ones.')
+                    return
+                  }
+                }
                 setShowForm(true)
                 setEditingComponent(null)
                 setFormData({
@@ -339,13 +371,56 @@ export default function ComponentManager() {
                 })
                 setUseBulkPricing(false)
               }}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-full sm:w-auto justify-center"
+              className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-full sm:w-auto justify-center ${
+                user && components.filter(c => c.created_by === user.id).length >= 200
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}
+              disabled={user && components.filter(c => c.created_by === user.id).length >= 200}
             >
               <Plus className="h-4 w-4 mr-2" />
               Add Component
             </button>
         </div>
       </div>
+
+      {/* Component Limit Warning */}
+      {user && (() => {
+        const userComponentCount = components.filter(c => c.created_by === user.id).length
+        if (userComponentCount >= 180) {
+          return (
+            <div className={`mb-6 rounded-md p-4 ${
+              userComponentCount >= 200 
+                ? 'bg-red-50 border border-red-200' 
+                : 'bg-yellow-50 border border-yellow-200'
+            }`}>
+              <div className="flex">
+                <div className="ml-3">
+                  <h3 className={`text-sm font-medium ${
+                    userComponentCount >= 200 ? 'text-red-800' : 'text-yellow-800'
+                  }`}>
+                    {userComponentCount >= 200 
+                      ? 'Component limit reached' 
+                      : 'Approaching component limit'
+                    }
+                  </h3>
+                  <div className={`mt-2 text-sm ${
+                    userComponentCount >= 200 ? 'text-red-700' : 'text-yellow-700'
+                  }`}>
+                    <p>
+                      {userComponentCount >= 200 
+                        ? 'You have reached the maximum of 200 components. Please delete some components before adding new ones.'
+                        : `You have ${userComponentCount} out of 200 components. Consider removing unused components to stay organized.`
+                      }
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        }
+        return null
+      })()}
 
       {/* Filter Panel */}
       {showFilters && (
@@ -490,6 +565,7 @@ export default function ComponentManager() {
                   <input
                     type="text"
                     id="name"
+                    maxLength={255}
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -522,6 +598,7 @@ export default function ComponentManager() {
                   <input
                     type="text"
                     id="manufacturer"
+                    maxLength={255}
                     value={formData.manufacturer}
                     onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -536,6 +613,7 @@ export default function ComponentManager() {
                   <input
                     type="text"
                     id="vendor"
+                    maxLength={255}
                     value={formData.vendor}
                     onChange={(e) => setFormData({ ...formData, vendor: e.target.value })}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -634,6 +712,7 @@ export default function ComponentManager() {
                   <input
                     type="text"
                     id="unit"
+                    maxLength={50}
                     value={formData.unit}
                     onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -778,15 +857,30 @@ export default function ComponentManager() {
 
               <div>
                 <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
-                  Notes
+                  Notes ({formData.notes.length}/300)
                 </label>
                 <textarea
                   id="notes"
                   rows={3}
                   value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  onChange={(e) => {
+                    const value = e.target.value
+                    if (value.length <= 300) {
+                      setFormData({ ...formData, notes: value })
+                    }
+                  }}
+                  className={`mt-1 block w-full rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 ${
+                    formData.notes.length > 280 
+                      ? 'border-yellow-300 focus:border-yellow-500 focus:ring-yellow-500' 
+                      : 'border-gray-300'
+                  }`}
+                  placeholder="Optional notes about this component (max 300 characters)"
                 />
+                {formData.notes.length > 280 && (
+                  <p className="mt-1 text-sm text-yellow-600">
+                    {300 - formData.notes.length} characters remaining
+                  </p>
+                )}
               </div>
 
               <div className="flex justify-end space-x-3">
@@ -813,13 +907,66 @@ export default function ComponentManager() {
         </div>
       )}
 
+      {/* Collapse/Expand All Controls */}
+      {Object.keys(groupedComponents).length > 1 && (
+        <div className="flex justify-end mb-4">
+          <div className="flex space-x-2">
+            <button
+              onClick={() => {
+                const allSections = Object.keys(groupedComponents)
+                const newState = allSections.reduce((acc, section) => {
+                  acc[section] = false
+                  return acc
+                }, {} as Record<string, boolean>)
+                setCollapsedSections(newState)
+              }}
+              className="text-sm text-blue-600 hover:text-blue-800 underline"
+            >
+              Expand All
+            </button>
+            <span className="text-gray-300">|</span>
+            <button
+              onClick={() => {
+                const allSections = Object.keys(groupedComponents)
+                const newState = allSections.reduce((acc, section) => {
+                  acc[section] = true
+                  return acc
+                }, {} as Record<string, boolean>)
+                setCollapsedSections(newState)
+              }}
+              className="text-sm text-blue-600 hover:text-blue-800 underline"
+            >
+              Collapse All
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-6">
-        {Object.entries(groupedComponents).map(([type, typeComponents]) => (
-          <div key={type} className="bg-white shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4 capitalize">
-                {type} ({typeComponents.length})
-              </h3>
+        {Object.entries(groupedComponents).map(([type, typeComponents]) => {
+          const isCollapsed = collapsedSections[type]
+          return (
+            <div key={type} className="bg-white shadow rounded-lg">
+              <div className="px-4 py-5 sm:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium text-gray-900 capitalize">
+                    {type} ({typeComponents.length})
+                  </h3>
+                  <button
+                    onClick={() => toggleSection(type)}
+                    className="inline-flex items-center p-1 border border-transparent rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    title={isCollapsed ? 'Expand section' : 'Collapse section'}
+                  >
+                    {isCollapsed ? (
+                      <ChevronRight className="h-5 w-5" />
+                    ) : (
+                      <ChevronDown className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
+                
+                {!isCollapsed && (
+                  <>
               {/* Mobile-friendly card layout */}
               <div className="block md:hidden space-y-3">
                 {typeComponents.map((component) => (
@@ -1069,10 +1216,13 @@ export default function ComponentManager() {
                   </tbody>
                 </table>
               </div>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
-        </div>
+          )
+        })}
+      </div>
       </div>
     </div>
   )

@@ -479,6 +479,7 @@ export default function SavedLoads() {
                     <input
                       type="text"
                       id="name"
+                      maxLength={255}
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -779,16 +780,30 @@ export default function SavedLoads() {
 
                 <div>
                   <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
-                    Notes
+                    Notes ({formData.notes.length}/300)
                   </label>
                   <textarea
                     id="notes"
                     rows={3}
                     value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    placeholder="Optional notes about this load..."
+                    onChange={(e) => {
+                      const value = e.target.value
+                      if (value.length <= 300) {
+                        setFormData({ ...formData, notes: value })
+                      }
+                    }}
+                    className={`mt-1 block w-full rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 ${
+                      formData.notes.length > 280 
+                        ? 'border-yellow-300 focus:border-yellow-500 focus:ring-yellow-500' 
+                        : 'border-gray-300'
+                    }`}
+                    placeholder="Optional notes about this load (max 300 characters)..."
                   />
+                  {formData.notes.length > 280 && (
+                    <p className="mt-1 text-sm text-yellow-600">
+                      {300 - formData.notes.length} characters remaining
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex justify-end space-x-3">

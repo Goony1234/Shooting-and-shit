@@ -448,6 +448,7 @@ export default function FactoryAmmoManager() {
                   <input
                     type="text"
                     id="name"
+                    maxLength={255}
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -463,6 +464,7 @@ export default function FactoryAmmoManager() {
                   <input
                     type="text"
                     id="manufacturer"
+                    maxLength={255}
                     value={formData.manufacturer}
                     onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -478,6 +480,7 @@ export default function FactoryAmmoManager() {
                   <input
                     type="text"
                     id="vendor"
+                    maxLength={255}
                     value={formData.vendor}
                     onChange={(e) => setFormData({ ...formData, vendor: e.target.value })}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"

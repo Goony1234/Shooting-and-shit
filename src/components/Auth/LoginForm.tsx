@@ -50,6 +50,7 @@ export default function LoginForm({ onToggleMode }: LoginFormProps) {
             <input
               type="email"
               id="email"
+              maxLength={320}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
