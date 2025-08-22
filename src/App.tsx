@@ -1,10 +1,12 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { SettingsProvider } from './contexts/SettingsContext'
 import ComponentManager from './components/ComponentManager'
 import SavedLoads from './components/SavedLoads'
 import CostComparison from './components/CostComparison'
 import FactoryAmmoManager from './components/FactoryAmmoManager'
 import LoadDevelopment from './components/LoadDevelopment'
+import Settings from './components/Settings'
 import Layout from './components/Layout'
 import AuthPage from './components/Auth/AuthPage'
 
@@ -27,15 +29,18 @@ function AppContent() {
   }
 
   return (
-    <Layout>
-      <Routes>
-        <Route path="/" element={<SavedLoads />} />
-        <Route path="/components" element={<ComponentManager />} />
-        <Route path="/factory-ammo" element={<FactoryAmmoManager />} />
-        <Route path="/compare" element={<CostComparison />} />
-        <Route path="/load-development" element={<LoadDevelopment />} />
-      </Routes>
-    </Layout>
+    <SettingsProvider>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<SavedLoads />} />
+          <Route path="/components" element={<ComponentManager />} />
+          <Route path="/factory-ammo" element={<FactoryAmmoManager />} />
+          <Route path="/compare" element={<CostComparison />} />
+          <Route path="/load-development" element={<LoadDevelopment />} />
+          <Route path="/settings" element={<Settings />} />
+        </Routes>
+      </Layout>
+    </SettingsProvider>
   )
 }
 

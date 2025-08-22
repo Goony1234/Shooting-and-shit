@@ -3,6 +3,7 @@ import { Database, Trash2, Eye, Copy, Plus, Save, Clock } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useRateLimit, RATE_LIMITS } from '../hooks/useRateLimit'
+import { InlinePrice } from './PriceDisplay'
 import type { SavedLoad, Component, LoadCalculation, Caliber } from '../types/index'
 
 interface LoadFormData {
@@ -22,6 +23,7 @@ interface LoadFormData {
 export default function SavedLoads() {
   const { user } = useAuth()
   const rateLimit = useRateLimit(RATE_LIMITS.LOAD_CREATE)
+
   const [savedLoads, setSavedLoads] = useState<SavedLoad[]>([])
   const [components, setComponents] = useState<Component[]>([])
   const [calibers, setCalibers] = useState<Caliber[]>([])
@@ -51,11 +53,11 @@ export default function SavedLoads() {
   }, [])
 
   useEffect(() => {
-    // Update rate limit status when component mounts
+    // Update rate limit status when component mounts or user changes
     if (user) {
-      rateLimit.updateRemainingActions()
+      rateLimit.updateRemainingActions(true) // immediate update on mount
     }
-  }, [user, rateLimit])
+  }, [user]) // Removed rateLimit from dependencies to prevent infinite re-renders
 
   useEffect(() => {
     if (showLoadBuilder) {
@@ -154,7 +156,7 @@ export default function SavedLoads() {
       return
     }
 
-    // Calculate brass cost based on reuse option
+    // Calculate brass cost based on reuse option (pre-tax)
     let brassCost = 0
     if (formData.brass_reuse_option === 'reuse') {
       brassCost = 0
@@ -171,6 +173,7 @@ export default function SavedLoads() {
       }
     }
 
+    // Calculate component costs (pre-tax)
     const powderCost = powder.cost_per_unit * formData.powder_weight
     const primerCost = primer.cost_per_unit
     const bulletCost = bullet.cost_per_unit
@@ -791,24 +794,34 @@ export default function SavedLoads() {
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                         <div className="text-center">
                           <div className="text-sm text-blue-600">Brass</div>
-                          <div className="text-lg font-bold text-blue-900">${calculation.brass_cost.toFixed(4)}</div>
+                          <div className="text-lg font-bold text-blue-900">
+                            <InlinePrice price={calculation.brass_cost} precision={4} />
+                          </div>
                         </div>
                         <div className="text-center">
                           <div className="text-sm text-blue-600">Powder</div>
-                          <div className="text-lg font-bold text-blue-900">${calculation.powder_cost.toFixed(4)}</div>
+                          <div className="text-lg font-bold text-blue-900">
+                            <InlinePrice price={calculation.powder_cost} precision={4} />
+                          </div>
                         </div>
                         <div className="text-center">
                           <div className="text-sm text-blue-600">Primer</div>
-                          <div className="text-lg font-bold text-blue-900">${calculation.primer_cost.toFixed(4)}</div>
+                          <div className="text-lg font-bold text-blue-900">
+                            <InlinePrice price={calculation.primer_cost} precision={4} />
+                          </div>
                         </div>
                         <div className="text-center">
                           <div className="text-sm text-blue-600">Bullet</div>
-                          <div className="text-lg font-bold text-blue-900">${calculation.bullet_cost.toFixed(4)}</div>
+                          <div className="text-lg font-bold text-blue-900">
+                            <InlinePrice price={calculation.bullet_cost} precision={4} />
+                          </div>
                         </div>
                       </div>
                       <div className="text-center border-t border-blue-200 pt-4">
                         <div className="text-lg text-blue-600">Total Cost per Round</div>
-                        <div className="text-3xl font-bold text-blue-900">${calculation.total_cost.toFixed(4)}</div>
+                        <div className="text-3xl font-bold text-blue-900">
+                          <InlinePrice price={calculation.total_cost} precision={4} />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1009,7 +1022,7 @@ export default function SavedLoads() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        ${load.cost_per_round.toFixed(4)}
+                        <InlinePrice price={load.cost_per_round} precision={4} />
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

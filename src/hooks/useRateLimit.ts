@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -23,6 +23,9 @@ export const useRateLimit = (config: RateLimitConfig) => {
     resetTime: null,
     lastError: null
   })
+  
+  // Add debouncing to prevent rapid successive API calls
+  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Check if action is allowed and log it
   const checkAndLogAction = useCallback(async (metadata: Record<string, any> = {}) => {
@@ -55,8 +58,11 @@ export const useRateLimit = (config: RateLimitConfig) => {
         return false
       }
 
-      // Update remaining actions
-      await updateRemainingActions()
+      // Only update remaining actions if the action was successful
+      // This prevents the redundant API calls
+      if (data) {
+        await updateRemainingActions(true) // immediate update after successful action
+      }
 
       setState(prev => ({ ...prev, isLoading: false }))
       return data as boolean
@@ -70,34 +76,52 @@ export const useRateLimit = (config: RateLimitConfig) => {
       }))
       return false
     }
-  }, [user, config])
+  }, [user, config, updateRemainingActions])
 
-  // Get remaining actions for this user
-  const updateRemainingActions = useCallback(async () => {
+  // Get remaining actions for this user with debouncing
+  const updateRemainingActions = useCallback(async (immediate: boolean = false) => {
     if (!user) return
 
-    try {
-      const { data: remaining } = await supabase.rpc('get_remaining_actions', {
-        p_user_id: user.id,
-        p_action_type: config.actionType,
-        p_max_actions: config.maxActions,
-        p_time_window: `${config.timeWindow / 1000} seconds`
-      })
+    // Clear any existing timeout
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current)
+      updateTimeoutRef.current = null
+    }
 
-      const { data: resetTime } = await supabase.rpc('get_rate_limit_reset_time', {
-        p_user_id: user.id,
-        p_action_type: config.actionType,
-        p_time_window: `${config.timeWindow / 1000} seconds`
-      })
+    const doUpdate = async () => {
+      try {
+        // Use the optimized combined function to reduce API calls from 2 to 1
+        const { data, error } = await supabase.rpc('get_rate_limit_status', {
+          p_user_id: user.id,
+          p_action_type: config.actionType,
+          p_max_actions: config.maxActions,
+          p_time_window: `${config.timeWindow / 1000} seconds`
+        })
 
-      setState(prev => ({
-        ...prev,
-        remainingActions: remaining as number,
-        resetTime: resetTime ? new Date(resetTime as string) : null
-      }))
+        if (error) {
+          console.error('Error getting rate limit status:', error)
+          return
+        }
 
-    } catch (error) {
-      console.error('Error updating remaining actions:', error)
+        const status = data?.[0]
+        if (status) {
+          setState(prev => ({
+            ...prev,
+            remainingActions: status.remaining_actions,
+            resetTime: status.reset_time ? new Date(status.reset_time) : null
+          }))
+        }
+
+      } catch (error) {
+        console.error('Error updating remaining actions:', error)
+      }
+    }
+
+    if (immediate) {
+      await doUpdate()
+    } else {
+      // Debounce updates to prevent excessive API calls
+      updateTimeoutRef.current = setTimeout(doUpdate, 500)
     }
   }, [user, config])
 
@@ -118,14 +142,19 @@ export const useRateLimit = (config: RateLimitConfig) => {
         return false
       }
 
-      await updateRemainingActions()
+      // Only update remaining actions if we don't already have fresh data
+      // This prevents unnecessary API calls
+      if (state.remainingActions === null) {
+        await updateRemainingActions(true) // immediate update for initial load
+      }
+      
       return data as boolean
 
     } catch (error) {
       console.error('Rate limit check error:', error)
       return false
     }
-  }, [user, config, updateRemainingActions])
+  }, [user, config, updateRemainingActions, state.remainingActions])
 
   return {
     ...state,

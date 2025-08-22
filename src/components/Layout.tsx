@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Calculator, Package, Database, BarChart3, Target, FlaskConical, Menu, X, User, LogOut } from 'lucide-react'
+import { Calculator, Package, Database, BarChart3, Target, FlaskConical, Settings as SettingsIcon, Menu, X, User, LogOut, AlertTriangle, Info } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { useSettings } from '../contexts/SettingsContext'
 import UserProfile from './UserProfile'
 
 interface LayoutProps {
@@ -12,7 +13,7 @@ interface NavItem {
   name: string
   href: string
   icon: React.ComponentType<{ className?: string }>
-  section: 'calculator' | 'development'
+  section: 'calculator' | 'development' | 'settings'
 }
 
 const navigation: NavItem[] = [
@@ -24,16 +25,21 @@ const navigation: NavItem[] = [
   
   // Load Development Section
   { name: 'Load Development', href: '/load-development', icon: FlaskConical, section: 'development' },
+  
+  // Settings Section
+  { name: 'Settings', href: '/settings', icon: SettingsIcon, section: 'settings' },
 ]
 
 const sections = [
   { id: 'calculator', name: 'Reloading Calculator', icon: Calculator },
   { id: 'development', name: 'Load Development', icon: FlaskConical },
+  { id: 'settings', name: 'Settings', icon: SettingsIcon },
 ]
 
 export default function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const location = useLocation()
+  const { salesTaxEnabled, salesTaxRate } = useSettings()
 
   const getCurrentSection = () => {
     const currentItem = navigation.find(item => item.href === location.pathname)
@@ -97,6 +103,52 @@ export default function Layout({ children }: LayoutProps) {
             </div>
           </div>
         </div>
+
+        {/* Tax Warning Banner */}
+        {!salesTaxEnabled && (
+          <div className="bg-yellow-50 border-b border-yellow-200">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center justify-between py-3">
+                <div className="flex items-center">
+                  <Info className="h-4 w-4 text-yellow-600 mr-2" />
+                  <p className="text-sm text-yellow-800">
+                    <span className="font-medium">Sales tax is disabled.</span>
+                    {' '}All prices shown are pre-tax.{' '}
+                    <Link 
+                      to="/settings" 
+                      className="underline hover:text-yellow-900"
+                    >
+                      Enable tax calculations in Settings
+                    </Link>
+                    {' '}for your location.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {salesTaxEnabled && salesTaxRate > 0 && (
+          <div className="bg-green-50 border-b border-green-200">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center justify-between py-3">
+                <div className="flex items-center">
+                  <AlertTriangle className="h-4 w-4 text-green-600 mr-2" />
+                  <p className="text-sm text-green-800">
+                    <span className="font-medium">Sales tax enabled ({(salesTaxRate * 100).toFixed(2)}%).</span>
+                    {' '}All prices include tax.{' '}
+                    <Link 
+                      to="/settings" 
+                      className="underline hover:text-green-900"
+                    >
+                      Adjust in Settings
+                    </Link>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Page content */}
         <main className="flex-1 relative overflow-hidden focus:outline-none">

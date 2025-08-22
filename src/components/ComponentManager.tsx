@@ -3,6 +3,7 @@ import { Plus, Edit2, Trash2, Package, User, Search, Filter, X, ChevronDown, Che
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useRateLimit, RATE_LIMITS } from '../hooks/useRateLimit'
+import { InlinePrice } from './PriceDisplay'
 import type { Component, Caliber } from '../types/index'
 
 interface ComponentFormData {
@@ -60,11 +61,11 @@ export default function ComponentManager() {
   }, [])
 
   useEffect(() => {
-    // Update rate limit status when component mounts
+    // Update rate limit status when component mounts or user changes
     if (user) {
-      rateLimit.updateRemainingActions()
+      rateLimit.updateRemainingActions(true) // immediate update on mount
     }
-  }, [user, rateLimit])
+  }, [user]) // Removed rateLimit from dependencies to prevent infinite re-renders
 
   const fetchComponents = async () => {
     try {
@@ -763,6 +764,26 @@ export default function ComponentManager() {
 
               {/* Pricing Section */}
               <div className="border-t pt-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-4">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-blue-800">
+                        Enter Pre-Tax Prices
+                      </h3>
+                      <div className="mt-2 text-sm text-blue-700">
+                        <p>
+                          Enter all prices <strong>before tax</strong>. The app will automatically add your configured sales tax rate to all calculations when tax is enabled in Settings.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="flex items-center mb-4">
                   <input
                     type="checkbox"
@@ -784,7 +805,7 @@ export default function ComponentManager() {
                         <>
                           <div>
                             <label htmlFor="box_price" className="block text-sm font-medium text-gray-700">
-                              Bottle/Container Price ($)
+                              Bottle/Container Price ($) <span className="text-xs text-gray-500">(pre-tax)</span>
                             </label>
                             <input
                               type="number"
@@ -832,7 +853,7 @@ export default function ComponentManager() {
                         <>
                           <div>
                             <label htmlFor="box_price" className="block text-sm font-medium text-gray-700">
-                              Box/Package Price ($)
+                              Box/Package Price ($) <span className="text-xs text-gray-500">(pre-tax)</span>
                             </label>
                             <input
                               type="number"
@@ -877,7 +898,7 @@ export default function ComponentManager() {
                   ) : (
                     <div>
                       <label htmlFor="cost_per_unit" className="block text-sm font-medium text-gray-700">
-                        Cost per Unit ($)
+                        Cost per Unit ($) <span className="text-xs text-gray-500">(pre-tax)</span>
                       </label>
                       <input
                         type="number"
@@ -1083,14 +1104,18 @@ export default function ComponentManager() {
                         <span className="text-gray-500">Cost:</span>
                         <div className="text-right">
                           <div className="text-gray-900 font-medium">
-                            ${component.cost_per_unit.toFixed(component.type === 'powder' ? 6 : 4)} / {component.unit}
+                            <InlinePrice 
+                              price={component.cost_per_unit} 
+                              precision={component.type === 'powder' ? 6 : 4}
+                              unit={component.unit}
+                            />
                           </div>
                           {component.box_price && component.quantity_per_box && (
                             <div className="text-xs text-gray-500">
                               {component.type === 'powder' ? (
-                                <>Bottle: ${component.box_price.toFixed(2)} / {(component.quantity_per_box / 7000).toFixed(1)} lbs</>
+                                <>Bottle: <InlinePrice price={component.box_price} precision={2} /> / {(component.quantity_per_box / 7000).toFixed(1)} lbs</>
                               ) : (
-                                <>Box: ${component.box_price.toFixed(2)} / {component.quantity_per_box} units</>
+                                <>Box: <InlinePrice price={component.box_price} precision={2} /> / {component.quantity_per_box} units</>
                               )}
                             </div>
                           )}
@@ -1184,14 +1209,18 @@ export default function ComponentManager() {
                         {/* Source & Cost Column */}
                         <td className="px-4 py-4">
                           <div className="text-sm font-medium text-gray-900">
-                            ${component.cost_per_unit.toFixed(component.type === 'powder' ? 6 : 4)} / {component.unit}
+                            <InlinePrice 
+                              price={component.cost_per_unit} 
+                              precision={component.type === 'powder' ? 6 : 4}
+                              unit={component.unit}
+                            />
                           </div>
                           {component.box_price && component.quantity_per_box && (
                             <div className="text-xs text-gray-500">
                               {component.type === 'powder' ? (
-                                <>Bottle: ${component.box_price.toFixed(2)} / {(component.quantity_per_box / 7000).toFixed(1)} lbs</>
+                                <>Bottle: <InlinePrice price={component.box_price} precision={2} /> / {(component.quantity_per_box / 7000).toFixed(1)} lbs</>
                               ) : (
-                                <>Box: ${component.box_price.toFixed(2)} / {component.quantity_per_box} units</>
+                                <>Box: <InlinePrice price={component.box_price} precision={2} /> / {component.quantity_per_box} units</>
                               )}
                             </div>
                           )}

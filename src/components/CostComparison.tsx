@@ -1,18 +1,27 @@
 import { useState, useEffect } from 'react'
 import { BarChart3, TrendingDown, TrendingUp, Target, Database, RefreshCw } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { InlinePrice } from './PriceDisplay'
+import { useSettings } from '../contexts/SettingsContext'
 import type { SavedLoad, FactoryAmmo, Component } from '../types/index'
 
 interface ComparisonResult {
   savings: number
   percentage: number
   isFirstCheaper: boolean
+  firstPreTax: number
+  firstPostTax: number
+  secondPreTax: number
+  secondPostTax: number
+  preTaxSavings: number
+  preTaxPercentage: number
 }
 
 type ComparisonItem = SavedLoad | FactoryAmmo
 type ComparisonType = 'load' | 'factory'
 
 export default function CostComparison() {
+  const { calculatePriceWithTax, salesTaxEnabled, salesTaxRate } = useSettings()
   const [savedLoads, setSavedLoads] = useState<SavedLoad[]>([])
   const [factoryAmmo, setFactoryAmmo] = useState<FactoryAmmo[]>([])
   const [components, setComponents] = useState<Component[]>([])
@@ -33,7 +42,7 @@ export default function CostComparison() {
     } else {
       setComparison(null)
     }
-  }, [firstItem, secondItem])
+  }, [firstItem, secondItem, salesTaxEnabled, salesTaxRate, calculatePriceWithTax])
 
   const fetchData = async () => {
     setLoading(true)
@@ -61,16 +70,33 @@ export default function CostComparison() {
   const calculateComparison = () => {
     if (!firstItem || !secondItem) return
 
-    const firstCost = firstItem.cost_per_round
-    const secondCost = secondItem.cost_per_round
-    const savings = secondCost - firstCost
-    const percentage = (savings / secondCost) * 100
+    // Both saved loads and factory ammo now store pre-tax values
+    const firstPreTax = firstItem.cost_per_round
+    const secondPreTax = secondItem.cost_per_round
+    
+    // Calculate post-tax costs by applying tax to stored pre-tax values
+    const firstPostTax = calculatePriceWithTax(firstItem.cost_per_round)
+    const secondPostTax = calculatePriceWithTax(secondItem.cost_per_round)
+
+    // Post-tax comparison (main comparison)
+    const savings = secondPostTax - firstPostTax
+    const percentage = (savings / secondPostTax) * 100
     const isFirstCheaper = savings > 0
+
+    // Pre-tax comparison
+    const preTaxSavings = secondPreTax - firstPreTax
+    const preTaxPercentage = (preTaxSavings / secondPreTax) * 100
 
     setComparison({
       savings: Math.abs(savings),
       percentage: Math.abs(percentage),
-      isFirstCheaper
+      isFirstCheaper,
+      firstPreTax,
+      firstPostTax,
+      secondPreTax,
+      secondPostTax,
+      preTaxSavings: Math.abs(preTaxSavings),
+      preTaxPercentage: Math.abs(preTaxPercentage)
     })
   }
 
@@ -210,7 +236,7 @@ export default function CostComparison() {
             </h4>
             <div className={`text-sm space-y-1 ${type === 'load' ? 'text-blue-800' : 'text-green-800'}`}>
               <div>Caliber: {selectedItem.caliber}</div>
-              <div>Cost per round: ${selectedItem.cost_per_round.toFixed(4)}</div>
+              <div>Cost per round: <InlinePrice price={selectedItem.cost_per_round} precision={4} /></div>
               {type === 'load' && isSavedLoad(selectedItem) && (
                 <div className={`text-xs mt-2 ${type === 'load' ? 'text-blue-600' : 'text-green-600'}`}>
                   <div>Brass: {getBrassDisplayInfo(selectedItem).name} ({getBrassDisplayInfo(selectedItem).cost})</div>
@@ -222,7 +248,7 @@ export default function CostComparison() {
               {type === 'factory' && isFactoryAmmo(selectedItem) && (
                 <div className="text-xs mt-2 text-green-600">
                   <div>Bullet Weight: {selectedItem.bullet_weight} grains</div>
-                  <div>Box: ${selectedItem.cost_per_box.toFixed(2)} / {selectedItem.rounds_per_box} rounds</div>
+                  <div>Box: <InlinePrice price={selectedItem.cost_per_box} precision={2} /> / {selectedItem.rounds_per_box} rounds</div>
                 </div>
               )}
             </div>
@@ -384,13 +410,26 @@ export default function CostComparison() {
               <div className="text-sm text-blue-600 mb-1">
                 {firstType === 'load' ? 'Saved Load' : 'Factory Ammo'}
               </div>
-              <div className="text-lg font-medium text-blue-900 mb-1">
+              <div className="text-lg font-medium text-blue-900 mb-3">
                 {firstType === 'load' ? firstItem.name : `${(firstItem as FactoryAmmo).manufacturer} ${firstItem.name}`}
               </div>
-              <div className="text-2xl font-bold text-blue-900">
-                ${firstItem.cost_per_round.toFixed(4)}
+              
+              {/* Pre-tax cost */}
+              <div className="mb-2">
+                <div className="text-xs text-blue-600 mb-1">Pre-tax</div>
+                <div className="text-lg font-semibold text-blue-800">
+                  ${comparison.firstPreTax.toFixed(4)}
+                </div>
               </div>
-              <div className="text-xs text-blue-600">per round</div>
+              
+              {/* Post-tax cost */}
+              <div className="border-t border-blue-200 pt-2">
+                <div className="text-xs text-blue-600 mb-1">With Tax</div>
+                <div className="text-2xl font-bold text-blue-900">
+                  ${comparison.firstPostTax.toFixed(4)}
+                </div>
+                <div className="text-xs text-blue-600">per round</div>
+              </div>
             </div>
 
             {/* Comparison Arrow & Savings */}
@@ -404,20 +443,41 @@ export default function CostComparison() {
                   <TrendingUp className="h-8 w-8 text-red-600" />
                 )}
               </div>
-              <div className={`text-lg font-semibold ${
+              
+              <div className={`text-lg font-semibold mb-3 ${
                 comparison.isFirstCheaper ? 'text-green-600' : 'text-red-600'
               }`}>
                 {comparison.isFirstCheaper ? 'First is Cheaper' : 'Second is Cheaper'}
               </div>
-              <div className={`text-2xl font-bold ${
-                comparison.isFirstCheaper ? 'text-green-700' : 'text-red-700'
-              }`}>
-                ${comparison.savings.toFixed(4)}
+              
+              {/* Post-tax savings (main) */}
+              <div className="mb-3">
+                <div className="text-xs text-gray-600 mb-1">With Tax Savings</div>
+                <div className={`text-2xl font-bold ${
+                  comparison.isFirstCheaper ? 'text-green-700' : 'text-red-700'
+                }`}>
+                  ${comparison.savings.toFixed(4)}
+                </div>
+                <div className={`text-sm ${
+                  comparison.isFirstCheaper ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  ({comparison.percentage.toFixed(1)}% difference)
+                </div>
               </div>
-              <div className={`text-sm ${
-                comparison.isFirstCheaper ? 'text-green-600' : 'text-red-600'
-              }`}>
-                ({comparison.percentage.toFixed(1)}% difference)
+              
+              {/* Pre-tax savings */}
+              <div className="border-t border-gray-200 pt-2">
+                <div className="text-xs text-gray-600 mb-1">Pre-tax Savings</div>
+                <div className={`text-lg font-semibold ${
+                  comparison.isFirstCheaper ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  ${comparison.preTaxSavings.toFixed(4)}
+                </div>
+                <div className={`text-xs ${
+                  comparison.isFirstCheaper ? 'text-green-500' : 'text-red-500'
+                }`}>
+                  ({comparison.preTaxPercentage.toFixed(1)}%)
+                </div>
               </div>
             </div>
 
@@ -431,13 +491,26 @@ export default function CostComparison() {
               <div className="text-sm text-green-600 mb-1">
                 {secondType === 'load' ? 'Saved Load' : 'Factory Ammo'}
               </div>
-              <div className="text-lg font-medium text-green-900 mb-1">
+              <div className="text-lg font-medium text-green-900 mb-3">
                 {secondType === 'load' ? secondItem.name : `${(secondItem as FactoryAmmo).manufacturer} ${secondItem.name}`}
               </div>
-              <div className="text-2xl font-bold text-green-900">
-                ${secondItem.cost_per_round.toFixed(4)}
+              
+              {/* Pre-tax cost */}
+              <div className="mb-2">
+                <div className="text-xs text-green-600 mb-1">Pre-tax</div>
+                <div className="text-lg font-semibold text-green-800">
+                  ${comparison.secondPreTax.toFixed(4)}
+                </div>
               </div>
-              <div className="text-xs text-green-600">per round</div>
+              
+              {/* Post-tax cost */}
+              <div className="border-t border-green-200 pt-2">
+                <div className="text-xs text-green-600 mb-1">With Tax</div>
+                <div className="text-2xl font-bold text-green-900">
+                  ${comparison.secondPostTax.toFixed(4)}
+                </div>
+                <div className="text-xs text-green-600">per round</div>
+              </div>
             </div>
           </div>
 
@@ -446,19 +519,39 @@ export default function CostComparison() {
             <h4 className="text-md font-medium text-gray-900 mb-4 text-center">Cost for Different Quantities</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-center">
               {[20, 50, 100, 1000].map(quantity => {
-                const firstTotal = firstItem.cost_per_round * quantity
-                const secondTotal = secondItem.cost_per_round * quantity
-                const savings = secondTotal - firstTotal
+                const firstPreTaxTotal = comparison.firstPreTax * quantity
+                const firstPostTaxTotal = comparison.firstPostTax * quantity
+                const secondPreTaxTotal = comparison.secondPreTax * quantity
+                const secondPostTaxTotal = comparison.secondPostTax * quantity
+                const preTaxSavings = secondPreTaxTotal - firstPreTaxTotal
+                const postTaxSavings = secondPostTaxTotal - firstPostTaxTotal
                 
                 return (
                   <div key={quantity} className="p-3 bg-gray-50 rounded-lg">
-                    <div className="text-sm font-medium text-gray-900 mb-2">{quantity} Rounds</div>
-                    <div className="text-xs text-blue-600">First: ${firstTotal.toFixed(2)}</div>
-                    <div className="text-xs text-green-600">Second: ${secondTotal.toFixed(2)}</div>
-                    <div className={`text-xs font-medium mt-1 ${
-                      savings > 0 ? 'text-green-700' : 'text-red-700'
-                    }`}>
-                      Diff: {savings > 0 ? '+' : ''}${savings.toFixed(2)}
+                    <div className="text-sm font-medium text-gray-900 mb-3">{quantity} Rounds</div>
+                    
+                    {/* Pre-tax totals */}
+                    <div className="mb-2 pb-2 border-b border-gray-300">
+                      <div className="text-xs text-gray-600 mb-1">Pre-tax</div>
+                      <div className="text-xs text-blue-600">First: ${firstPreTaxTotal.toFixed(2)}</div>
+                      <div className="text-xs text-green-600">Second: ${secondPreTaxTotal.toFixed(2)}</div>
+                      <div className={`text-xs font-medium mt-1 ${
+                        preTaxSavings > 0 ? 'text-green-700' : 'text-red-700'
+                      }`}>
+                        Diff: {preTaxSavings > 0 ? '+' : ''}${preTaxSavings.toFixed(2)}
+                      </div>
+                    </div>
+                    
+                    {/* Post-tax totals */}
+                    <div>
+                      <div className="text-xs text-gray-600 mb-1">With Tax</div>
+                      <div className="text-xs text-blue-600 font-medium">First: ${firstPostTaxTotal.toFixed(2)}</div>
+                      <div className="text-xs text-green-600 font-medium">Second: ${secondPostTaxTotal.toFixed(2)}</div>
+                      <div className={`text-xs font-bold mt-1 ${
+                        postTaxSavings > 0 ? 'text-green-700' : 'text-red-700'
+                      }`}>
+                        Diff: {postTaxSavings > 0 ? '+' : ''}${postTaxSavings.toFixed(2)}
+                      </div>
                     </div>
                   </div>
                 )

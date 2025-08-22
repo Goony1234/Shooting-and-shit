@@ -75,3 +75,12 @@ export interface LoadCalculation {
   total_cost: number
   cost_per_round: number
 }
+
+export interface UserSettings {
+  id: string
+  user_id: string
+  sales_tax_enabled: boolean
+  sales_tax_rate: number
+  created_at: string
+  updated_at: string
+}
