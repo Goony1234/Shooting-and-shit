@@ -356,7 +356,7 @@ export default function ComponentManager() {
                   <div className="flex items-center">
                     <Clock className="h-3 w-3 mr-1" />
                     <span className={`${rateLimit.remainingActions <= 2 ? 'text-red-500' : 'text-gray-500'}`}>
-                      {rateLimit.remainingActions}/10 creates left
+                      {rateLimit.remainingActions}/20 creates left
                     </span>
                   </div>
                 )}

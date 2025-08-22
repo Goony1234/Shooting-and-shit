@@ -138,7 +138,7 @@ export const useRateLimit = (config: RateLimitConfig) => {
 // Predefined rate limit configurations
 export const RATE_LIMITS = {
   COMPONENT_CREATE: {
-    maxActions: 10,
+    maxActions: 20,
     timeWindow: 60 * 60 * 1000, // 1 hour
     actionType: 'component_create'
   },
