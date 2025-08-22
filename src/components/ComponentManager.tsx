@@ -376,7 +376,7 @@ export default function ComponentManager() {
                   ? 'bg-gray-400 cursor-not-allowed'
                   : 'bg-blue-600 hover:bg-blue-700'
               }`}
-              disabled={user && components.filter(c => c.created_by === user.id).length >= 200}
+              disabled={user ? components.filter(c => c.created_by === user.id).length >= 200 : false}
             >
               <Plus className="h-4 w-4 mr-2" />
               Add Component
