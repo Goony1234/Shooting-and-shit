@@ -425,10 +425,10 @@ export default function SavedLoads() {
               <div className="bg-blue-50 rounded-lg p-4">
                 <div className="text-sm font-medium text-blue-900 mb-2">Cost Analysis</div>
                 <div className="text-2xl font-bold text-blue-900">
-                  ${load.cost_per_round.toFixed(4)} per round
+                  <InlinePrice price={load.cost_per_round} precision={4} /> per round
                 </div>
                 <div className="text-sm text-blue-600">
-                  Total cost: ${load.total_cost.toFixed(4)}
+                  Total cost: <InlinePrice price={load.total_cost} precision={4} />
                 </div>
               </div>
 
@@ -925,12 +925,12 @@ export default function SavedLoads() {
               </div>
               
               <div className="grid grid-cols-2 gap-4 mb-3">
-                <div className="text-center bg-blue-50 rounded-lg p-3">
-                  <div className="text-xs text-blue-600">Cost per Round</div>
-                  <div className="text-lg font-bold text-blue-900">
-                    ${load.cost_per_round.toFixed(4)}
-                  </div>
-                </div>
+                                        <div className="text-center bg-blue-50 rounded-lg p-3">
+                          <div className="text-xs text-blue-600">Cost per Round</div>
+                          <div className="text-lg font-bold text-blue-900">
+                            <InlinePrice price={load.cost_per_round} precision={4} />
+                          </div>
+                        </div>
                 <div className="text-center bg-gray-50 rounded-lg p-3">
                   <div className="text-xs text-gray-600">Created</div>
                   <div className="text-sm font-medium text-gray-900">

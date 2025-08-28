@@ -612,7 +612,7 @@ export default function FactoryAmmoManager() {
               {formData.cost_per_box > 0 && formData.rounds_per_box > 0 && (
                 <div className="bg-blue-50 rounded-md p-3">
                   <p className="text-sm text-blue-900">
-                    Calculated cost per round: <strong>${(formData.cost_per_box / formData.rounds_per_box).toFixed(4)}</strong>
+                    Calculated cost per round: <strong><InlinePrice price={formData.cost_per_box / formData.rounds_per_box} precision={4} /></strong>
                   </p>
                 </div>
               )}
@@ -694,7 +694,7 @@ export default function FactoryAmmoManager() {
                         <div className="text-center bg-blue-50 rounded-lg p-3">
                           <div className="text-xs text-blue-600">Cost per Round</div>
                           <div className="text-lg font-bold text-blue-900">
-                            ${ammo.cost_per_round.toFixed(4)}
+                            <InlinePrice price={ammo.cost_per_round} precision={4} />
                           </div>
                         </div>
                         <div className="text-center bg-gray-50 rounded-lg p-3">
@@ -708,7 +708,7 @@ export default function FactoryAmmoManager() {
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span className="text-gray-500">Box Price:</span>
-                          <span className="text-gray-900">${ammo.cost_per_box.toFixed(2)} / {ammo.rounds_per_box} rounds</span>
+                          <span className="text-gray-900"><InlinePrice price={ammo.cost_per_box} precision={2} /> / {ammo.rounds_per_box} rounds</span>
                         </div>
                         
                         {ammo.vendor && (
